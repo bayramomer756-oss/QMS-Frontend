@@ -11,7 +11,7 @@ import '../../history/presentation/history_screen.dart';
 import '../../../core/widgets/premium_menu_button.dart';
 import '../../admin/presentation/admin_panel_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
-import '../../auth/providers/auth_provider.dart';
+import '../../auth/presentation/providers/auth_providers.dart';
 import 'about_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -34,15 +34,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _checkBirthday() {
-    final user = ref.read(currentUserProvider);
-    if (user?.birthDate != null) {
-      final now = DateTime.now();
-      // Yıl kontrolü olmadan sadece ay ve gün kontrolü
-      if (user!.birthDate!.month == now.month &&
-          user.birthDate!.day == now.day) {
-        _showBirthdayCelebration(user.fullName);
+    final userAsync = ref.read(currentUserProvider);
+    userAsync.whenData((user) {
+      if (user?.birthDate != null) {
+        final now = DateTime.now();
+        // Yıl kontrolü olmadan sadece ay ve gün kontrolü
+        if (user!.birthDate!.month == now.month &&
+            user.birthDate!.day == now.day) {
+          _showBirthdayCelebration(user.fullName);
+        }
       }
-    }
+    });
   }
 
   void _showBirthdayCelebration(String name) {

@@ -12,7 +12,7 @@ import 'saf_b9_counter_screen.dart';
 import 'final_kontrol_screen.dart';
 import 'giris_kalite_menu_screen.dart';
 import 'rework_screen.dart';
-import 'fire_kayit_screen.dart';
+import 'fire_kayit/fire_kayit_screen.dart';
 import 'numune_screen.dart';
 import '../../measurement_instruments/presentation/measurement_instruments_screen.dart';
 import '../../history/presentation/history_screen.dart';

@@ -5,15 +5,13 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
-import '../../../core/providers/master_data_provider.dart';
 import '../../auth/presentation/login_screen.dart';
-import '../../auth/providers/auth_provider.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
 import '../../history/presentation/history_screen.dart';
 import '../../forms/presentation/forms_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import 'scrap_analysis_tab.dart';
-import '../../forms/presentation/fire_kayit_screen.dart';
+import '../../forms/presentation/fire_kayit/fire_kayit_screen.dart';
 import '../../forms/presentation/giris_kalite_kontrol_screen.dart';
 import '../../forms/presentation/final_kontrol_screen.dart';
 import '../../forms/presentation/rework_screen.dart';
@@ -43,8 +41,6 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final String _operatorName = 'Admin';
-  int _selectedMasterDataCategory =
-      0; // 0: Ürün, 1: Tezgah, 2: Bölge, 3: Hata, 4: Rework
 
   // Filtre State
   DateTimeRange? _selectedDateRange;
@@ -951,339 +947,79 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
 
   // --- Master Data Tab ---
   Widget _buildMasterDataTab() {
-    final masterData = ref.watch(masterDataProvider);
-    final notifier = ref.read(masterDataProvider.notifier);
-
-    return Column(
-      children: [
-        Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _buildCategoryChip(0, 'Ürünler', LucideIcons.package),
-              _buildCategoryChip(1, 'Tezgahlar', LucideIcons.monitor),
-              _buildCategoryChip(2, 'Bölgeler', LucideIcons.map),
-              _buildCategoryChip(3, 'Hata Kodları', LucideIcons.alertTriangle),
-              _buildCategoryChip(4, 'Rework Sonuç', LucideIcons.clipboardCheck),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _getCategoryTitle(),
-                      style: const TextStyle(
-                        color: AppColors.textMain,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddMasterDataDialog(notifier),
-                      icon: const Icon(LucideIcons.plus, size: 18),
-                      label: const Text('Yeni Ekle'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Expanded(child: _buildMasterDataList(masterData, notifier)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _getCategoryTitle() {
-    switch (_selectedMasterDataCategory) {
-      case 0:
-        return 'Ürün Listesi';
-      case 1:
-        return 'Tezgah Listesi';
-      case 2:
-        return 'Bölge Listesi';
-      case 3:
-        return 'Hata Kodları';
-      case 4:
-        return 'Rework Sonuçları';
-      default:
-        return 'Liste';
-    }
-  }
-
-  Widget _buildCategoryChip(int index, String label, IconData icon) {
-    final isSelected = _selectedMasterDataCategory == index;
-    return Padding(
-      padding: const EdgeInsets.only(right: 12, top: 12),
-      child: FilterChip(
-        label: Row(
-          mainAxisSize: MainAxisSize.min,
+    // TODO: Implement Master Data management with Clean Architecture
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.white : AppColors.textMain,
+              LucideIcons.construction,
+              size: 80,
+              color: AppColors.textSecondary,
             ),
-            const SizedBox(width: 8),
-            Text(label),
-          ],
-        ),
-        selected: isSelected,
-        onSelected: (bool selected) {
-          if (selected) {
-            setState(() => _selectedMasterDataCategory = index);
-          }
-        },
-        backgroundColor: AppColors.surface,
-        selectedColor: AppColors.primary,
-        labelStyle: TextStyle(
-          color: isSelected ? Colors.white : AppColors.textMain,
-        ),
-        checkmarkColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: isSelected ? AppColors.primary : AppColors.border,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMasterDataList(
-    MasterDataState data,
-    MasterDataNotifier notifier,
-  ) {
-    if (_selectedMasterDataCategory == 0) {
-      return ListView.builder(
-        itemCount: data.products.length,
-        itemBuilder: (context, index) {
-          final item = data.products[index];
-          return _buildListItem(
-            title: '${item.code} - ${item.name}',
-            subtitle: 'Tür: ${item.type}',
-            onDelete: () => notifier.removeProduct(item.id),
-          );
-        },
-      );
-    } else {
-      List<SimpleDataModel> list = [];
-      Function(String) onDelete = (id) {};
-
-      switch (_selectedMasterDataCategory) {
-        case 1:
-          list = data.machines;
-          onDelete = notifier.removeMachine;
-          break;
-        case 2:
-          list = data.zones;
-          onDelete = notifier.removeZone;
-          break;
-        case 3:
-          list = data.defectCodes;
-          onDelete = notifier.removeDefect;
-          break;
-        case 4:
-          list = data.reworkResults;
-          onDelete = notifier.removeReworkResult;
-          break;
-      }
-
-      return ListView.builder(
-        itemCount: list.length,
-        itemBuilder: (context, index) {
-          final item = list[index];
-          return _buildListItem(
-            title: item.code,
-            subtitle: item.description ?? '',
-            onDelete: () => onDelete(item.id),
-          );
-        },
-      );
-    }
-  }
-
-  Widget _buildListItem({
-    required String title,
-    required String subtitle,
-    required VoidCallback onDelete,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.glassBorder),
-      ),
-      child: ListTile(
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: AppColors.textMain,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: subtitle.isNotEmpty
-            ? Text(
-                subtitle,
-                style: const TextStyle(color: AppColors.textSecondary),
-              )
-            : null,
-        trailing: IconButton(
-          icon: const Icon(
-            LucideIcons.trash2,
-            color: AppColors.error,
-            size: 20,
-          ),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                backgroundColor: AppColors.surface,
-                title: const Text(
-                  'Sil',
-                  style: TextStyle(color: AppColors.textMain),
-                ),
-                content: const Text(
-                  'Bu kaydı silmek istediğinizden emin misiniz?',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('İptal'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      onDelete();
-                      Navigator.pop(ctx);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                    ),
-                    child: const Text('Sil'),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showAddMasterDataDialog(MasterDataNotifier notifier) {
-    final titleController = TextEditingController();
-    final subController = TextEditingController();
-    final typeController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text(
-          'Yeni Ekle',
-          style: TextStyle(color: AppColors.textMain),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              style: const TextStyle(color: AppColors.textMain),
-              decoration: InputDecoration(
-                labelText: _selectedMasterDataCategory == 0
-                    ? 'Ürün Kodu'
-                    : 'Kod',
-                labelStyle: const TextStyle(color: AppColors.textSecondary),
+            const SizedBox(height: 24),
+            Text(
+              'Master Data Yönetimi',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textMain,
               ),
             ),
             const SizedBox(height: 12),
-            if (_selectedMasterDataCategory == 0) ...[
-              TextField(
-                controller: subController,
-                style: const TextStyle(color: AppColors.textMain),
-                decoration: const InputDecoration(
-                  labelText: 'Ürün Adı',
-                  labelStyle: TextStyle(color: AppColors.textSecondary),
-                ),
+            Text(
+              'Bu özellik Clean Architecture ile\nyeniden geliştirilecek',
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: typeController,
-                style: const TextStyle(color: AppColors.textMain),
-                decoration: const InputDecoration(
-                  labelText: 'Ürün Türü (Enjeksiyon vb.)',
-                  labelStyle: TextStyle(color: AppColors.textSecondary),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Planlanmış Özellikler:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textMain,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildFeatureItem('• Ürün Yönetimi'),
+                  _buildFeatureItem('• Tezgah Yönetimi'),
+                  _buildFeatureItem('• Bölge Yönetimi'),
+                  _buildFeatureItem('• Hata Kodları'),
+                  _buildFeatureItem('• Rework Sonuçları'),
+                ],
               ),
-            ] else if (_selectedMasterDataCategory != 1 &&
-                _selectedMasterDataCategory != 4) ...[
-              TextField(
-                controller: subController,
-                style: const TextStyle(color: AppColors.textMain),
-                decoration: const InputDecoration(
-                  labelText: 'Açıklama',
-                  labelStyle: TextStyle(color: AppColors.textSecondary),
-                ),
-              ),
-            ],
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (titleController.text.isEmpty) return;
-              switch (_selectedMasterDataCategory) {
-                case 0:
-                  notifier.addProduct(
-                    titleController.text,
-                    subController.text,
-                    typeController.text,
-                  );
-                  break;
-                case 1:
-                  notifier.addMachine(titleController.text);
-                  break;
-                case 2:
-                  notifier.addZone(titleController.text, subController.text);
-                  break;
-                case 3:
-                  notifier.addDefect(titleController.text, subController.text);
-                  break;
-                case 4:
-                  notifier.addReworkResult(titleController.text);
-                  break;
-              }
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.duzceGreen,
-            ),
-            child: const Text('Ekle'),
-          ),
-        ],
       ),
     );
   }
+
+  Widget _buildFeatureItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(text, style: TextStyle(color: AppColors.textSecondary)),
+    );
+  }
+
+  // LEGACY METHOD - Disabled until Master Data feature is implemented with Clean Architecture
+  /* 
+  void _showAddMasterDataDialog(MasterDataNotifier notifier) {
+    // Implementation commented out - requires MasterDataNotifier from Clean Architecture
+  }
+  */
 
   DateTime _selectedReportDate = DateTime.now();
 
@@ -1606,24 +1342,14 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
             ),
             tooltip: 'Düzenle',
             onPressed: () {
-              // Mock Edit Action
+              // Mock Edit Action - User management not implemented yet
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Düzenleme modu açılıyor... (Simülasyon)'),
+                  content: Text('User management coming soon'),
                   backgroundColor: AppColors.primary,
-                  duration: Duration(seconds: 1),
                 ),
               );
             },
-          ),
-          IconButton(
-            icon: const Icon(
-              LucideIcons.trash2,
-              color: AppColors.error,
-              size: 18,
-            ),
-            tooltip: 'Sil',
-            onPressed: () => _showDeleteConfirmation(),
           ),
         ],
       ),
@@ -1656,43 +1382,66 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
   }
 
   Widget _buildUserManagementTab() {
-    final authNotifier = ref.read(authProvider.notifier);
-    final users = authNotifier.allUsers;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Kullanıcı Listesi',
-                style: TextStyle(
-                  color: AppColors.textMain,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+    // TODO: Implement User Management with proper backend API support
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.users, size: 80, color: AppColors.textSecondary),
+            const SizedBox(height: 24),
+            Text(
+              'Kullanıcı Yönetimi',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textMain,
               ),
-              ElevatedButton.icon(
-                onPressed: () => _showAddUserDialog(),
-                icon: const Icon(LucideIcons.userPlus, size: 18),
-                label: const Text('Yeni Kullanıcı'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Bu özellik backend API ile\nbirlikte geliştirilecek',
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...users.map((user) => _buildUserItem(user)),
-        ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gerekli Backend Endpoints:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textMain,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildFeatureItem('• GET /api/users - Tüm kullanıcılar'),
+                  _buildFeatureItem('• POST /api/users - Yeni kullanıcı'),
+                  _buildFeatureItem('• PUT /api/users/:id - Güncelle'),
+                  _buildFeatureItem('• DELETE /api/users/:id - Sil'),
+                  _buildFeatureItem(
+                    '• POST /api/users/:id/password - Şifre değiştir',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  // LEGACY USER MANAGEMENT METHODS - Disabled until backend supports user CRUD
+  /*
   Widget _buildUserItem(UserModel user) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -2180,4 +1929,5 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
       ),
     );
   }
+  */
 }
