@@ -27,6 +27,7 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
@@ -43,3 +44,40 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/app/src/main/assets/
+
+# Android generic
+**/android/local.properties
+**/android/key.properties
+**/android/*.jks
+**/android/*.keystore
+/android/.gradle
+/android/captures/
+/android/gradlew
+/android/gradlew.bat
+
+# iOS generic
+/ios/Flutter/App.framework
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/ios/ServiceDefinitions.json
+/ios/Runner/GeneratedPluginRegistrant.*
+
+# Windows specific (Important for your OS)
+/windows/flutter/ephemeral/
+/windows/flutter/generated_plugin_registrant.cc
+/windows/flutter/generated_plugin_registrant.h
+/windows/runner/resources/
+
+# Linux specific
+/linux/flutter/ephemeral/
+/linux/flutter/generated_plugin_registrant.cc
+/linux/flutter/generated_plugin_registrant.h
+
+# MacOS specific
+/macos/Flutter/ephemeral/
+/macos/Flutter/generated_plugin_registrant.swift
+
+# Exceptions to above rules
+!/android/app/src/main/assets/public.txt
