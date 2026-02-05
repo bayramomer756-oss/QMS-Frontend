@@ -46,6 +46,8 @@ class _ReworkScreenState extends State<ReworkScreen> {
 
   // Mevcut giriş için controller'lar
   final _productCodeController = TextEditingController();
+  final _productNameController = TextEditingController();
+  final _productTypeController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
   final _aciklamaController = TextEditingController();
   final _sarjDayController = TextEditingController();
@@ -99,6 +101,8 @@ class _ReworkScreenState extends State<ReworkScreen> {
   @override
   void dispose() {
     _productCodeController.dispose();
+    _productNameController.dispose();
+    _productTypeController.dispose();
     _quantityController.dispose();
     _aciklamaController.dispose();
     _sarjDayController.dispose();
@@ -341,12 +345,36 @@ class _ReworkScreenState extends State<ReworkScreen> {
                                           ),
                                           const SizedBox(width: 12),
                                           Expanded(
-                                            child: _buildInputField(
+                                            child: _buildQuantityField(
                                               label: 'Adet',
                                               controller: _quantityController,
-                                              icon: LucideIcons.layers,
-                                              keyboardType:
-                                                  TextInputType.number,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Second Row: Ürün Adı, Ürün Türü (NEW)
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 2,
+                                            child: _buildInputField(
+                                              label: 'Ürün Adı',
+                                              controller:
+                                                  _productNameController,
+                                              icon: LucideIcons.tag,
+                                              enabled: false,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: _buildInputField(
+                                              label: 'Ürün Türü',
+                                              controller:
+                                                  _productTypeController,
+                                              icon: LucideIcons.package,
+                                              enabled: false,
                                             ),
                                           ),
                                         ],
@@ -623,7 +651,7 @@ class _ReworkScreenState extends State<ReworkScreen> {
                 child: Text(
                   _batchNo,
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
@@ -757,6 +785,7 @@ class _ReworkScreenState extends State<ReworkScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    bool enabled = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,6 +805,7 @@ class _ReworkScreenState extends State<ReworkScreen> {
             controller: controller,
             keyboardType: keyboardType,
             maxLines: maxLines,
+            enabled: enabled,
             style: TextStyle(color: AppColors.textMain, fontSize: 14),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),
@@ -1012,6 +1042,83 @@ class _ReworkScreenState extends State<ReworkScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildQuantityField({
+    required String label,
+    required TextEditingController controller,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              // Decrease button
+              InkWell(
+                onTap: () {
+                  int current = int.tryParse(controller.text) ?? 1;
+                  if (current > 1) {
+                    setState(() => controller.text = (current - 1).toString());
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(
+                    LucideIcons.minus,
+                    color: AppColors.textSecondary,
+                    size: 18,
+                  ),
+                ),
+              ),
+              // Text field
+              Expanded(
+                child: TextFormField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textMain,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ),
+              // Increase button
+              InkWell(
+                onTap: () {
+                  int current = int.tryParse(controller.text) ?? 1;
+                  setState(() => controller.text = (current + 1).toString());
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(
+                    LucideIcons.plus,
+                    color: AppColors.textSecondary,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

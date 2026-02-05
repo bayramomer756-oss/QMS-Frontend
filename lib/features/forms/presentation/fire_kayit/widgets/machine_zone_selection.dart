@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../../core/widgets/forms/custom_dropdown.dart';
 
 /// Machine and zone selection section
@@ -30,7 +29,7 @@ class MachineZoneSelection extends StatelessWidget {
             label: 'Tezgah',
             value: selectedMachine,
             items: machineOptions,
-            icon: LucideIcons.monitor,
+            icon: Icons.precision_manufacturing_outlined,
             onChanged: onMachineChanged,
           ),
         ),
@@ -40,7 +39,7 @@ class MachineZoneSelection extends StatelessWidget {
             label: 'Bölge S.',
             value: selectedZone,
             items: zoneOptions,
-            icon: LucideIcons.mapPin,
+            icon: Icons.location_on_outlined,
             onChanged: onZoneChanged,
           ),
         ),

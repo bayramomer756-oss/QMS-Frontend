@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../../core/widgets/forms/custom_text_field.dart';
 
 /// Operator name and description input section
@@ -21,13 +20,13 @@ class OperatorDescriptionSection extends StatelessWidget {
         CustomTextField(
           label: 'Operatör Adı',
           controller: operatorNameController,
-          icon: LucideIcons.user,
+          icon: Icons.person_outline,
         ),
         const SizedBox(height: 12),
         CustomTextField(
           label: 'Açıklama (İsteğe Bağlı)',
           controller: aciklamaController,
-          icon: LucideIcons.fileText,
+          icon: Icons.description_outlined,
           maxLines: 2,
         ),
       ],

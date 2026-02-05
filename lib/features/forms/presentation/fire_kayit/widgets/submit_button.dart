@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../../core/constants/app_colors.dart';
 
 /// Submit button for Fire Kayit form
@@ -13,7 +12,7 @@ class SubmitButton extends StatelessWidget {
     super.key,
     required this.onPressed,
     this.label = 'KAYDET',
-    this.icon = LucideIcons.save,
+    this.icon = Icons.save,
     this.color = AppColors.reworkOrange,
   });
 

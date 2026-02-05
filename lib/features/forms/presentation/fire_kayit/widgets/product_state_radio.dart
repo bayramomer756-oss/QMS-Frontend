@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/widgets/forms/custom_radio_option.dart';
 
@@ -30,7 +29,7 @@ class ProductStateRadio extends StatelessWidget {
               child: CustomRadioOption(
                 value: 'Ham',
                 groupValue: productState,
-                icon: LucideIcons.circle,
+                icon: Icons.radio_button_unchecked,
                 onChanged: onChanged,
               ),
             ),
@@ -39,7 +38,7 @@ class ProductStateRadio extends StatelessWidget {
               child: CustomRadioOption(
                 value: 'İşlenmiş',
                 groupValue: productState,
-                icon: LucideIcons.checkCircle,
+                icon: Icons.check_circle_outline,
                 onChanged: onChanged,
               ),
             ),

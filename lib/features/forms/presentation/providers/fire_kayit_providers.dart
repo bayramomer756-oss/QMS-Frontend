@@ -5,6 +5,7 @@ import '../../data/repositories/fire_kayit_repository_impl.dart';
 import '../../domain/repositories/i_fire_kayit_repository.dart';
 import '../../domain/usecases/create_fire_kayit_form_usecase.dart';
 import '../../domain/usecases/get_fire_kayit_forms_usecase.dart';
+import '../../domain/entities/fire_kayit_formu.dart';
 
 // DataSource Provider
 final fireKayitRemoteDataSourceProvider = Provider<FireKayitRemoteDataSource>((
@@ -34,3 +35,12 @@ final createFireKayitFormUseCaseProvider = Provider<CreateFireKayitFormUseCase>(
     return CreateFireKayitFormUseCase(repository);
   },
 );
+
+// Fire Kayıt Listesi Provider
+final fireKayitFormsProvider = FutureProvider<List<FireKayitFormu>>((
+  ref,
+) async {
+  final useCase = ref.watch(getFireKayitFormsUseCaseProvider);
+  // UseCase call ile çalışıyor, tüm kayıtlar için büyük pageSize
+  return await useCase.call(pageNumber: 1, pageSize: 1000);
+});

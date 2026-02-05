@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../../core/widgets/forms/custom_text_field.dart';
 import '../../../../../core/widgets/forms/stepper_field.dart';
 
@@ -35,7 +34,7 @@ class ProductInfoSection extends StatelessWidget {
               child: CustomTextField(
                 label: 'Ürün Kodu',
                 controller: productCodeController,
-                icon: LucideIcons.package,
+                icon: Icons.inventory_2_outlined,
               ),
             ),
             const SizedBox(width: 12),
@@ -54,15 +53,17 @@ class ProductInfoSection extends StatelessWidget {
         CustomTextField(
           label: 'Ürün Adı',
           controller: productNameController,
-          icon: LucideIcons.tag,
+          icon: Icons.label_outline,
+          enabled: false,
         ),
         const SizedBox(height: 12),
 
-        // Third Row: Ürün Tipi
+        // Third Row: Ürün Türü
         CustomTextField(
-          label: 'Ürün Tipi (Enjeksiyon vb.)',
+          label: 'Ürün Türü',
           controller: productTypeController,
-          icon: LucideIcons.layers,
+          icon: Icons.layers_outlined,
+          enabled: false,
         ),
       ],
     );

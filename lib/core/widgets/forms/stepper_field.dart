@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../constants/app_colors.dart';
 
 /// Reusable number stepper field with +/- buttons
@@ -62,9 +61,9 @@ class StepperField extends StatelessWidget {
                     width: 40,
                     alignment: Alignment.center,
                     child: const Icon(
-                      LucideIcons.minus,
+                      Icons.remove,
                       color: AppColors.textSecondary,
-                      size: 16,
+                      size: 18,
                     ),
                   ),
                 ),
@@ -102,9 +101,9 @@ class StepperField extends StatelessWidget {
                     width: 40,
                     alignment: Alignment.center,
                     child: const Icon(
-                      LucideIcons.plus,
+                      Icons.add,
                       color: AppColors.primary,
-                      size: 16,
+                      size: 18,
                     ),
                   ),
                 ),

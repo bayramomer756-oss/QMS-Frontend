@@ -25,7 +25,6 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
   final _productTypeController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
   final _aciklamaController = TextEditingController();
-  final _operatorNameController = TextEditingController();
 
   // Şarj No Controllers
   final _sarjDayController = TextEditingController();
@@ -60,7 +59,6 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
     _productTypeController.dispose();
     _quantityController.dispose();
     _aciklamaController.dispose();
-    _operatorNameController.dispose();
     _sarjDayController.dispose();
     _sarjLineController.dispose();
     super.dispose();
@@ -79,7 +77,6 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
     if (_supplierController.text.isEmpty ||
         _productCodeController.text.isEmpty ||
         _productNameController.text.isEmpty ||
-        _operatorNameController.text.isEmpty ||
         _selectedStatus == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -150,9 +147,7 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                     Navigator.of(context).pop();
                   }
                 },
-                operatorInitial: _operatorNameController.text.isNotEmpty
-                    ? _operatorNameController.text[0].toUpperCase()
-                    : 'O',
+                operatorInitial: 'O',
                 onLogout: () => Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                 ),
@@ -290,14 +285,16 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                         label: 'Ürün Adı',
                                         controller: _productNameController,
                                         icon: LucideIcons.tag,
+                                        enabled: false,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: _buildInputField(
-                                        label: 'Malzeme Türü',
+                                        label: 'Ürün Türü',
                                         controller: _productTypeController,
                                         icon: LucideIcons.layoutGrid,
+                                        enabled: false,
                                       ),
                                     ),
                                   ],
@@ -337,14 +334,6 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                       ),
                                     );
                                   }).toList(),
-                                ),
-                                const SizedBox(height: 12),
-
-                                // Operatör
-                                _buildInputField(
-                                  label: 'Kontrol Eden (Operatör)',
-                                  controller: _operatorNameController,
-                                  icon: LucideIcons.user,
                                 ),
                                 const SizedBox(height: 12),
 
@@ -426,6 +415,7 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    bool enabled = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,6 +435,7 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
             controller: controller,
             keyboardType: keyboardType,
             maxLines: maxLines,
+            enabled: enabled,
             style: TextStyle(color: AppColors.textMain, fontSize: 14),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),

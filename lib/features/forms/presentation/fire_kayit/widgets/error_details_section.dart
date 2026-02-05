@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/widgets/forms/custom_dropdown.dart';
-import '../../../../../core/widgets/forms/stepper_field.dart';
 
 /// Error details section with Şarj No picker and error reason
 class ErrorDetailsSection extends StatefulWidget {
@@ -68,10 +66,14 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    LucideIcons.hash,
-                    color: AppColors.textSecondary,
-                    size: 16,
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: Icon(
+                      Icons.numbers,
+                      color: AppColors.textSecondary,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   // Year
@@ -111,7 +113,7 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
                   ),
                   const SizedBox(width: 4),
                   // Day
-                  StepperField(
+                  _buildStepperField(
                     controller: widget.sarjDayController,
                     width: 80,
                     inputFormatters: [
@@ -139,7 +141,7 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
                   ),
                   const SizedBox(width: 4),
                   // Line
-                  StepperField(
+                  _buildStepperField(
                     controller: widget.sarjLineController,
                     width: 60,
                     isText: true,
@@ -193,7 +195,7 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
                     child: Text(
                       _batchNo,
                       style: const TextStyle(
-                        color: AppColors.primary,
+                        color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'monospace',
@@ -212,7 +214,7 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
           label: 'Hata Nedeni',
           value: widget.selectedErrorReason,
           items: widget.errorReasons,
-          icon: LucideIcons.alertCircle,
+          icon: Icons.error_outline,
           onChanged: widget.onErrorReasonChanged,
         ),
       ],
@@ -225,67 +227,106 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
     required VoidCallback onIncrement,
   }) {
     return Container(
-      width: 50,
-      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.glassBorder),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Column(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onIncrement,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  topRight: Radius.circular(8),
-                ),
-                child: Container(
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    LucideIcons.chevronUp,
-                    size: 12,
-                    color: AppColors.primary,
-                  ),
-                ),
+          InkWell(
+            onTap: onDecrement,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Icon(
+                Icons.chevron_left,
+                size: 16,
+                color: AppColors.textSecondary,
               ),
             ),
           ),
-          Container(height: 1, color: AppColors.glassBorder),
-          Container(
-            height: 16,
-            alignment: Alignment.center,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               value,
               style: const TextStyle(
                 color: AppColors.textMain,
-                fontSize: 11,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          Container(height: 1, color: AppColors.glassBorder),
-          Expanded(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onDecrement,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(8),
-                  bottomRight: Radius.circular(8),
-                ),
-                child: Container(
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    LucideIcons.chevronDown,
-                    size: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+          InkWell(
+            onTap: onIncrement,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: AppColors.textSecondary,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepperField({
+    required TextEditingController controller,
+    required double width,
+    required VoidCallback onDecrement,
+    required VoidCallback onIncrement,
+    bool isText = false,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    return Container(
+      width: width,
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: onDecrement,
+            child: Icon(
+              Icons.chevron_left,
+              size: 16,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: isText ? TextInputType.text : TextInputType.number,
+              textAlign: TextAlign.center,
+              inputFormatters: inputFormatters,
+              style: const TextStyle(
+                color: AppColors.textMain,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+          ),
+          InkWell(
+            onTap: onIncrement,
+            child: Icon(
+              Icons.chevron_right,
+              size: 16,
+              color: AppColors.textSecondary,
             ),
           ),
         ],

@@ -48,6 +48,15 @@ dependencies:
   excel: ^4.0.6
   file_picker: ^10.3.8
   fl_chart: ^1.1.1
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+  
+  # Offline-First Sync Dependencies
+  drift: ^2.15.0
+  sqlite3_flutter_libs: ^0.5.20
+  path_provider: ^2.1.4
+  path: ^1.9.0
+  connectivity_plus: ^6.0.5
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +70,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.10.5
   riverpod_generator: ^4.0.0+1
+  drift_dev: ^2.15.0
   custom_lint: ^0.8.1
   riverpod_lint: ^3.1.0
 

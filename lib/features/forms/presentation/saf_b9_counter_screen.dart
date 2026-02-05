@@ -1,11 +1,14 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
+import '../../../core/widgets/dialogs/hurda_selection_dialog.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
-import '../domain/production_counter.dart';
+import '../logic/cubits/production_counter_cubit.dart';
+import '../logic/cubits/production_counter_state.dart';
 
 class SafB9CounterScreen extends StatefulWidget {
   final DateTime? initialDate;
@@ -16,18 +19,9 @@ class SafB9CounterScreen extends StatefulWidget {
 }
 
 class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
-  // Sayaçlar
-  int varDuzce = 0;
-  int varAlmanya = 0;
-  int varHurda = 0;
-  int varRework = 0;
-
   // Form Controllers
   final _amountController = TextEditingController(text: '1');
   final _aciklamaController = TextEditingController();
-
-  // Log listesi
-  final List<ProductionLogEntry> _logEntries = [];
 
   // Sabit Ürün Bilgileri
   final String _productName = 'SAF B9';
@@ -61,58 +55,31 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
 
   int get _currentAmount => int.tryParse(_amountController.text) ?? 1;
 
-  void _addLog(String type, int qty, {String? reason}) {
-    setState(() {
-      _logEntries.insert(
-        0,
-        ProductionLogEntry(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          timestamp: widget.initialDate ?? DateTime.now(),
-          actionType: type,
-          quantity: qty,
-          scrapReason: reason,
-          operatorName: _operatorName,
-        ),
-      );
-      // Reset amount after action
-      _amountController.text = '1';
-    });
-  }
-
   void _addToDuzce() {
-    setState(() {
-      varDuzce += _currentAmount;
-      _addLog('duzce', _currentAmount);
-    });
+    context.read<ProductionCounterCubit>().incrementDuzce(_currentAmount);
+    _amountController.text = '1';
   }
 
   void _addToAlmanya() {
-    setState(() {
-      varAlmanya += _currentAmount;
-      _addLog('almanya', _currentAmount);
-    });
+    context.read<ProductionCounterCubit>().incrementAlmanya(_currentAmount);
+    _amountController.text = '1';
   }
 
   void _addToRework() {
-    setState(() {
-      varRework += _currentAmount;
-      _addLog('rework', _currentAmount);
-    });
+    context.read<ProductionCounterCubit>().incrementRework(_currentAmount);
+    _amountController.text = '1';
   }
 
   void _showHurdaPopup() {
     showDialog(
       context: context,
-      builder: (context) => _HurdaDialog(
-        onSelect: (criteriaId, criteriaName) {
-          setState(() {
-            varHurda += _currentAmount;
-            _addLog(
-              'hurda',
-              _currentAmount,
-              reason: '$criteriaId-$criteriaName',
-            );
-          });
+      builder: (context) => HurdaSelectionDialog(
+        onReasonSelected: (reason) {
+          context.read<ProductionCounterCubit>().incrementHurda(
+            _currentAmount,
+            reason,
+          );
+          _amountController.text = '1';
         },
       ),
     );
@@ -120,631 +87,694 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Arka Plan Görseli
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(
-                    'assets/images/frenbu_bg.jpg',
-                  ), // Updated BG
-                  fit: BoxFit.cover,
+    return BlocProvider(
+      create: (context) => ProductionCounterCubit(),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Stack(
+          children: [
+            // Arka Plan Görseli
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(
+                      'assets/images/frenbu_bg.jpg',
+                    ), // Updated BG
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(color: Colors.black.withValues(alpha: 0.6)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(color: Colors.black.withValues(alpha: 0.6)),
+                ),
               ),
             ),
-          ),
-          // Ön Plan İçerik
-          Row(
-            children: [
-              // Sidebar
-              SidebarNavigation(
-                selectedIndex: 1, // Formlar altındayız
-                onItemSelected: (index) {
-                  if (index == 0) {
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  } else if (index == 3) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ShiftNotesScreen(),
-                      ),
-                    );
-                  } else if (index == 1) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                operatorInitial: _operatorName.isNotEmpty
-                    ? _operatorName[0]
-                    : 'O',
-                onLogout: () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+            // Ön Plan İçerik
+            Row(
+              children: [
+                // Sidebar
+                SidebarNavigation(
+                  selectedIndex: 1, // Formlar altındayız
+                  onItemSelected: (index) {
+                    if (index == 0) {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    } else if (index == 3) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ShiftNotesScreen(),
+                        ),
+                      );
+                    } else if (index == 1) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  operatorInitial: _operatorName.isNotEmpty
+                      ? _operatorName[0]
+                      : 'O',
+                  onLogout: () => Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  ),
                 ),
-              ),
-              // Ana İçerik
-              Expanded(
-                child: SafeArea(
-                  child: Column(
-                    children: [
-                      // Header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
-                        child: Row(
-                          children: [
-                            InkWell(
-                              onTap: () => Navigator.of(context).pop(),
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: AppColors.glassBorder,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  LucideIcons.arrowLeft,
-                                  color: AppColors.textMain,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'SAF B9 Üretim Takibi',
-                                  style: TextStyle(
-                                    color: AppColors.textMain,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  'Günlük üretim giriş ekranı',
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Image.asset('assets/images/logo.png', height: 32),
-                          ],
-                        ),
-                      ),
-
-                      // Form Content
-                      Expanded(
-                        child: Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.symmetric(horizontal: 24),
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.only(bottom: 32),
-                            child: Column(
-                              // Main Column inside Scroll
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(24),
+                // Ana İçerik
+                Expanded(
+                  child: SafeArea(
+                    child: Column(
+                      children: [
+                        // Header
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          child: Row(
+                            children: [
+                              InkWell(
+                                onTap: () => Navigator.of(context).pop(),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
                                   decoration: BoxDecoration(
                                     color: AppColors.surface,
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: AppColors.glassBorder,
                                     ),
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      // Product Info Row
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildReadOnlyField(
-                                              label: 'Ürün Kodu',
-                                              value: _productCode,
-                                              icon: LucideIcons.box,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: _buildReadOnlyField(
-                                              label: 'Teknik Resim',
-                                              value: _productDrawing,
-                                              icon: LucideIcons.fileImage,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildReadOnlyField(
-                                              label: 'Ürün Adı',
-                                              value: _productName,
-                                              icon: LucideIcons.clipboardList,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: _buildTezgahDropdown(),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 24),
-                                      Divider(color: AppColors.border),
-                                      const SizedBox(height: 24),
+                                  child: const Icon(
+                                    LucideIcons.arrowLeft,
+                                    color: AppColors.textMain,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'SAF B9 Üretim Takibi',
+                                    style: TextStyle(
+                                      color: AppColors.textMain,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Günlük üretim giriş ekranı',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              Image.asset('assets/images/logo.png', height: 32),
+                            ],
+                          ),
+                        ),
 
-                                      // Input & Counters
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // Left: Current Totals
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Mevcut Üretim',
-                                                  style: TextStyle(
-                                                    color:
-                                                        AppColors.textSecondary,
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 8),
-                                                // First row: DÜZCE, ALMANYA (2 equal boxes)
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child:
-                                                          _buildCounterDisplay(
-                                                            'DÜZCE',
-                                                            varDuzce,
-                                                            AppColors
-                                                                .duzceGreen,
-                                                          ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Expanded(
-                                                      child:
-                                                          _buildCounterDisplay(
-                                                            'ALMANYA',
-                                                            varAlmanya,
-                                                            AppColors
-                                                                .almanyaBlue,
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 8),
-                                                // Second row: HURDA, REWORK, TOPLAM (3 equal boxes)
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child:
-                                                          _buildCounterDisplay(
-                                                            'HURDA',
-                                                            varHurda,
-                                                            AppColors.error,
-                                                          ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Expanded(
-                                                      child:
-                                                          _buildCounterDisplay(
-                                                            'REWORK',
-                                                            varRework,
-                                                            AppColors
-                                                                .reworkOrange,
-                                                          ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Expanded(
-                                                      child:
-                                                          _buildCounterDisplay(
-                                                            'TOPLAM',
-                                                            varDuzce +
-                                                                varAlmanya +
-                                                                varHurda +
-                                                                varRework,
-                                                            AppColors.primary,
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
+                        // Form Content
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.symmetric(horizontal: 24),
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.only(bottom: 32),
+                              child: Column(
+                                // Main Column inside Scroll
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppColors.glassBorder,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        // Product Info Row
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildReadOnlyField(
+                                                label: 'Ürün Kodu',
+                                                value: _productCode,
+                                                icon: LucideIcons.box,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 24),
-                                          // Right: Input
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Giriş Miktarı',
-                                                  style: TextStyle(
-                                                    color:
-                                                        AppColors.textSecondary,
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Row(
-                                                  children: [
-                                                    _buildAmountButton(
-                                                      LucideIcons.minus,
-                                                      () => _updateAmount(-1),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: _buildReadOnlyField(
+                                                label: 'Teknik Resim',
+                                                value: _productDrawing,
+                                                icon: LucideIcons.fileImage,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildReadOnlyField(
+                                                label: 'Ürün Adı',
+                                                value: _productName,
+                                                icon: LucideIcons.clipboardList,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: _buildTezgahDropdown(),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 24),
+                                        Divider(color: AppColors.border),
+                                        const SizedBox(height: 24),
+
+                                        // Input & Counters
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Left: Current Totals
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Mevcut Üretim',
+                                                    style: TextStyle(
+                                                      color: AppColors
+                                                          .textSecondary,
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600,
                                                     ),
-                                                    const SizedBox(width: 8),
-                                                    Expanded(
-                                                      child: TextFormField(
-                                                        controller:
-                                                            _amountController,
-                                                        style: TextStyle(
-                                                          color: AppColors
-                                                              .textMain,
-                                                          fontSize: 18,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        keyboardType:
-                                                            TextInputType
-                                                                .number,
-                                                        decoration: InputDecoration(
-                                                          filled: true,
-                                                          fillColor: AppColors
-                                                              .surfaceLight,
-                                                          contentPadding:
-                                                              const EdgeInsets.symmetric(
-                                                                vertical: 12,
-                                                              ),
-                                                          border: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  10,
-                                                                ),
-                                                            borderSide:
-                                                                BorderSide(
-                                                                  color: AppColors
-                                                                      .border,
-                                                                ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  // First row: DÜZCE, ALMANYA (2 equal boxes)
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child:
+                                                            BlocBuilder<
+                                                              ProductionCounterCubit,
+                                                              ProductionCounterState
+                                                            >(
+                                                              builder: (context, state) {
+                                                                return _buildCounterDisplay(
+                                                                  'DÜZCE',
+                                                                  state.duzce,
+                                                                  AppColors
+                                                                      .duzceGreen,
+                                                                );
+                                                              },
+                                                            ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(
+                                                        child:
+                                                            BlocBuilder<
+                                                              ProductionCounterCubit,
+                                                              ProductionCounterState
+                                                            >(
+                                                              builder: (context, state) {
+                                                                return _buildCounterDisplay(
+                                                                  'ALMANYA',
+                                                                  state.almanya,
+                                                                  AppColors
+                                                                      .almanyaBlue,
+                                                                );
+                                                              },
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  // Second row: HURDA, REWORK, TOPLAM (3 equal boxes)
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child:
+                                                            BlocBuilder<
+                                                              ProductionCounterCubit,
+                                                              ProductionCounterState
+                                                            >(
+                                                              builder:
+                                                                  (
+                                                                    context,
+                                                                    state,
+                                                                  ) {
+                                                                    return _buildCounterDisplay(
+                                                                      'HURDA',
+                                                                      state
+                                                                          .hurda,
+                                                                      AppColors
+                                                                          .error,
+                                                                    );
+                                                                  },
+                                                            ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(
+                                                        child:
+                                                            BlocBuilder<
+                                                              ProductionCounterCubit,
+                                                              ProductionCounterState
+                                                            >(
+                                                              builder: (context, state) {
+                                                                return _buildCounterDisplay(
+                                                                  'REWORK',
+                                                                  state.rework,
+                                                                  AppColors
+                                                                      .reworkOrange,
+                                                                );
+                                                              },
+                                                            ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(
+                                                        child:
+                                                            BlocBuilder<
+                                                              ProductionCounterCubit,
+                                                              ProductionCounterState
+                                                            >(
+                                                              builder:
+                                                                  (
+                                                                    context,
+                                                                    state,
+                                                                  ) {
+                                                                    return _buildCounterDisplay(
+                                                                      'TOPLAM',
+                                                                      state
+                                                                          .total,
+                                                                      AppColors
+                                                                          .primary,
+                                                                    );
+                                                                  },
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 24),
+                                            // Right: Input
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Giriş Miktarı',
+                                                    style: TextStyle(
+                                                      color: AppColors
+                                                          .textSecondary,
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Row(
+                                                    children: [
+                                                      _buildAmountButton(
+                                                        LucideIcons.minus,
+                                                        () => _updateAmount(-1),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(
+                                                        child: TextFormField(
+                                                          controller:
+                                                              _amountController,
+                                                          style: TextStyle(
+                                                            color: AppColors
+                                                                .textMain,
+                                                            fontSize: 18,
+                                                            fontWeight:
+                                                                FontWeight.bold,
                                                           ),
-                                                          enabledBorder:
-                                                              OutlineInputBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      10,
-                                                                    ),
-                                                                borderSide:
-                                                                    BorderSide(
-                                                                      color: AppColors
-                                                                          .border,
-                                                                    ),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .number,
+                                                          decoration: InputDecoration(
+                                                            filled: true,
+                                                            fillColor: AppColors
+                                                                .surfaceLight,
+                                                            contentPadding:
+                                                                const EdgeInsets.symmetric(
+                                                                  vertical: 12,
+                                                                ),
+                                                            border: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    10,
+                                                                  ),
+                                                              borderSide:
+                                                                  BorderSide(
+                                                                    color: AppColors
+                                                                        .border,
+                                                                  ),
+                                                            ),
+                                                            enabledBorder: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    10,
+                                                                  ),
+                                                              borderSide:
+                                                                  BorderSide(
+                                                                    color: AppColors
+                                                                        .border,
+                                                                  ),
+                                                            ),
+                                                            focusedBorder: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    10,
+                                                                  ),
+                                                              borderSide: BorderSide(
+                                                                color: AppColors
+                                                                    .primary,
                                                               ),
-                                                          focusedBorder: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  10,
-                                                                ),
-                                                            borderSide:
-                                                                BorderSide(
-                                                                  color: AppColors
-                                                                      .primary,
-                                                                ),
+                                                            ),
                                                           ),
                                                         ),
                                                       ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    _buildAmountButton(
-                                                      LucideIcons.plus,
-                                                      () => _updateAmount(1),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 8),
-                                                // Quick Add
-                                                Row(
-                                                  children: [
-                                                    _buildQuickButton(
-                                                      '+5',
-                                                      () => _updateAmount(5),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    _buildQuickButton(
-                                                      '+10',
-                                                      () => _updateAmount(10),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 8),
-                                                // Quick Subtract
-                                                Row(
-                                                  children: [
-                                                    _buildQuickButton(
-                                                      '-5',
-                                                      () => _updateAmount(-5),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    _buildQuickButton(
-                                                      '-10',
-                                                      () => _updateAmount(-10),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
+                                                      const SizedBox(width: 8),
+                                                      _buildAmountButton(
+                                                        LucideIcons.plus,
+                                                        () => _updateAmount(1),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  // Quick Add
+                                                  Row(
+                                                    children: [
+                                                      _buildQuickButton(
+                                                        '+5',
+                                                        () => _updateAmount(5),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      _buildQuickButton(
+                                                        '+10',
+                                                        () => _updateAmount(10),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  // Quick Subtract
+                                                  Row(
+                                                    children: [
+                                                      _buildQuickButton(
+                                                        '-5',
+                                                        () => _updateAmount(-5),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      _buildQuickButton(
+                                                        '-10',
+                                                        () =>
+                                                            _updateAmount(-10),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                          ],
+                                        ),
 
-                                      const SizedBox(height: 32),
-                                      Text(
-                                        'İşlem Tamamla',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-
-                                      // Action Buttons
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildActionButton(
-                                              'DÜZCE EKLE',
-                                              AppColors.duzceGreen,
-                                              LucideIcons.checkCircle,
-                                              _addToDuzce,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: _buildActionButton(
-                                              'ALMANYA EKLE',
-                                              AppColors.almanyaBlue,
-                                              LucideIcons.globe,
-                                              _addToAlmanya,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildActionButton(
-                                              'REWORK EKLE',
-                                              AppColors.reworkOrange,
-                                              LucideIcons.wrench,
-                                              _addToRework,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: _buildActionButton(
-                                              'HURDA EKLE',
-                                              AppColors.error,
-                                              LucideIcons.trash2,
-                                              _showHurdaPopup,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 16),
-                                      // Açıklama Input
-                                      Text(
-                                        'Açıklama',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: AppColors.surfaceLight
-                                              .withValues(alpha: 0.5),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                          border: Border.all(
-                                            color: AppColors.border,
-                                          ),
-                                        ),
-                                        child: TextFormField(
-                                          controller: _aciklamaController,
-                                          maxLines: 2,
+                                        const SizedBox(height: 32),
+                                        Text(
+                                          'İşlem Tamamla',
                                           style: TextStyle(
-                                            color: AppColors.textMain,
+                                            color: AppColors.textSecondary,
                                             fontSize: 14,
-                                          ),
-                                          decoration: InputDecoration(
-                                            prefixIcon: Icon(
-                                              LucideIcons.fileText,
-                                              color: AppColors.textSecondary,
-                                              size: 18,
-                                            ),
-                                            border: InputBorder.none,
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 12,
-                                                  vertical: 12,
-                                                ),
-                                            hintText: 'Opsiyonel not...',
-                                            hintStyle: TextStyle(
-                                              color: AppColors.textSecondary
-                                                  .withValues(alpha: 0.5),
-                                            ),
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 24),
-                                      // Summary Section - Eklenen Adetler
-                                      if (varDuzce > 0 ||
-                                          varAlmanya > 0 ||
-                                          varRework > 0 ||
-                                          varHurda > 0)
+                                        const SizedBox(height: 12),
+
+                                        // Action Buttons
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildActionButton(
+                                                'DÜZCE EKLE',
+                                                AppColors.duzceGreen,
+                                                LucideIcons.checkCircle,
+                                                _addToDuzce,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: _buildActionButton(
+                                                'ALMANYA EKLE',
+                                                AppColors.almanyaBlue,
+                                                LucideIcons.globe,
+                                                _addToAlmanya,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildActionButton(
+                                                'REWORK EKLE',
+                                                AppColors.reworkOrange,
+
+                                                LucideIcons.wrench,
+                                                _addToRework,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: _buildActionButton(
+                                                'HURDA EKLE',
+                                                AppColors.error,
+                                                LucideIcons.trash2,
+                                                _showHurdaPopup,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 16),
+                                        // Açıklama Input
+                                        Text(
+                                          'Açıklama',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
                                         Container(
-                                          padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
                                             color: AppColors.surfaceLight
                                                 .withValues(alpha: 0.5),
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              10,
                                             ),
                                             border: Border.all(
                                               color: AppColors.border,
                                             ),
                                           ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    LucideIcons.clipboardList,
-                                                    color:
-                                                        AppColors.textSecondary,
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    'Eklenen Adetler',
-                                                    style: TextStyle(
-                                                      color: AppColors.textMain,
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ],
+                                          child: TextFormField(
+                                            controller: _aciklamaController,
+                                            maxLines: 2,
+                                            style: TextStyle(
+                                              color: AppColors.textMain,
+                                              fontSize: 14,
+                                            ),
+                                            decoration: InputDecoration(
+                                              prefixIcon: Icon(
+                                                LucideIcons.fileText,
+                                                color: AppColors.textSecondary,
+                                                size: 18,
                                               ),
-                                              const SizedBox(height: 12),
-                                              Wrap(
-                                                spacing: 8,
-                                                runSpacing: 8,
-                                                children: [
-                                                  if (varDuzce > 0)
-                                                    _buildSummaryChip(
-                                                      '$varDuzce Düzce',
-                                                      AppColors.duzceGreen,
-                                                    ),
-                                                  if (varAlmanya > 0)
-                                                    _buildSummaryChip(
-                                                      '$varAlmanya Almanya',
-                                                      AppColors.almanyaBlue,
-                                                    ),
-                                                  if (varRework > 0)
-                                                    _buildSummaryChip(
-                                                      '$varRework Rework',
-                                                      AppColors.reworkOrange,
-                                                    ),
-                                                  if (varHurda > 0)
-                                                    ..._buildHurdaSummary(),
-                                                ],
+                                              border: InputBorder.none,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 12,
+                                                  ),
+                                              hintText: 'Opsiyonel not...',
+                                              hintStyle: TextStyle(
+                                                color: AppColors.textSecondary
+                                                    .withValues(alpha: 0.5),
                                               ),
-                                            ],
+                                            ),
                                           ),
                                         ),
-                                      if (varDuzce > 0 ||
-                                          varAlmanya > 0 ||
-                                          varRework > 0 ||
-                                          varHurda > 0)
-                                        const SizedBox(height: 16),
-                                      // Save Button
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton.icon(
-                                          onPressed: () {
-                                            // Reset all fields
-                                            setState(() {
-                                              varDuzce = 0;
-                                              varAlmanya = 0;
-                                              varHurda = 0;
-                                              varRework = 0;
-                                              _amountController.text = '1';
-                                              _aciklamaController.clear();
-                                              _selectedTezgah = null;
-                                              _logEntries.clear();
-                                            });
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: const Text(
-                                                  'Veriler kaydedildi ve sıfırlandı',
+                                        const SizedBox(height: 24),
+                                        // Summary Section - Eklenen Adetler
+                                        BlocBuilder<
+                                          ProductionCounterCubit,
+                                          ProductionCounterState
+                                        >(
+                                          builder: (context, state) {
+                                            if (state.total > 0) {
+                                              return Container(
+                                                padding: const EdgeInsets.all(
+                                                  16,
                                                 ),
-                                                backgroundColor:
-                                                    AppColors.duzceGreen,
-                                                duration: const Duration(
-                                                  seconds: 2,
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.surfaceLight
+                                                      .withValues(alpha: 0.5),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: AppColors.border,
+                                                  ),
                                                 ),
-                                              ),
-                                            );
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          LucideIcons
+                                                              .clipboardList,
+                                                          color: AppColors
+                                                              .textSecondary,
+                                                          size: 18,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Eklenen Adetler',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Wrap(
+                                                      spacing: 8,
+                                                      runSpacing: 8,
+                                                      children: [
+                                                        if (state.duzce > 0)
+                                                          _buildSummaryChip(
+                                                            '${state.duzce} Düzce',
+                                                            AppColors
+                                                                .duzceGreen,
+                                                          ),
+                                                        if (state.almanya > 0)
+                                                          _buildSummaryChip(
+                                                            '${state.almanya} Almanya',
+                                                            AppColors
+                                                                .almanyaBlue,
+                                                          ),
+                                                        if (state.rework > 0)
+                                                          _buildSummaryChip(
+                                                            '${state.rework} Rework',
+                                                            AppColors
+                                                                .reworkOrange,
+                                                          ),
+                                                        if (state.hurda > 0)
+                                                          ..._buildHurdaSummary(
+                                                            state,
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }
+                                            return const SizedBox.shrink();
                                           },
-                                          icon: const Icon(
-                                            LucideIcons.save,
-                                            size: 18,
-                                          ),
-                                          label: const Text('KAYDET'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.primary,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 16,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        // Save Button
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              // Reset all fields
+                                              // Reset all fields
+                                              context
+                                                  .read<
+                                                    ProductionCounterCubit
+                                                  >()
+                                                  .clearAll();
+                                              setState(() {
+                                                _amountController.text = '1';
+                                                _aciklamaController.clear();
+                                                _selectedTezgah = null;
+                                              });
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: const Text(
+                                                    'Veriler kaydedildi ve sıfırlandı',
+                                                  ),
+                                                  backgroundColor:
+                                                      AppColors.duzceGreen,
+                                                  duration: const Duration(
+                                                    seconds: 2,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              LucideIcons.save,
+                                              size: 18,
                                             ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
+                                            label: const Text('KAYDET'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  AppColors.primary,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              elevation: 0,
                                             ),
-                                            elevation: 0,
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -963,7 +993,7 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
       child: Text(
         label,
         style: TextStyle(
-          color: color,
+          color: Colors.white,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
@@ -971,14 +1001,14 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
     );
   }
 
-  List<Widget> _buildHurdaSummary() {
+  List<Widget> _buildHurdaSummary(ProductionCounterState state) {
     // Log girdilerinden hurda hatalarını grupla
-    final hurdaLogs = _logEntries
-        .where((e) => e.actionType == 'hurda')
-        .toList();
+    final hurdaLogs = state.logs.where((e) => e.actionType == 'hurda').toList();
 
-    if (hurdaLogs.isEmpty) {
-      return [_buildSummaryChip('$varHurda Hurda', AppColors.error)];
+    if (hurdaLogs.isEmpty && state.hurda > 0) {
+      return [_buildSummaryChip('${state.hurda} Hurda', AppColors.error)];
+    } else if (hurdaLogs.isEmpty) {
+      return [];
     }
 
     // Hata nedenlerine göre grupla
@@ -988,79 +1018,8 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
       errorCounts[reason] = (errorCounts[reason] ?? 0) + log.quantity;
     }
 
-    final List<Widget> chips = [];
-    errorCounts.forEach((reason, count) {
-      chips.add(_buildSummaryChip('$count adet $reason', AppColors.error));
-    });
-
-    return chips;
-  }
-}
-
-// Hurda Seçim Dialog'u - Aynı yapı
-class _HurdaDialog extends StatelessWidget {
-  final void Function(int id, String name) onSelect;
-
-  const _HurdaDialog({required this.onSelect});
-
-  @override
-  Widget build(BuildContext context) {
-    // ... (Logics can remain same or adapted to match QualityApprovedForm style dropdown if needed, but Dialog is better for quick selection)
-    // I will use a simple dialog matching the theme
-    return Dialog(
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
-        child: Column(
-          children: [
-            Text(
-              'Hurda Sebebi Seçin',
-              style: TextStyle(
-                color: AppColors.textMain,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: QualityControlCriteria.criteria.length,
-                itemBuilder: (context, index) {
-                  final c = QualityControlCriteria.criteria[index];
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.error.withValues(alpha: 0.1),
-                      radius: 16,
-                      child: Text(
-                        '${c['id']}',
-                        style: TextStyle(color: AppColors.error),
-                      ),
-                    ),
-                    title: Text(
-                      c['name'],
-                      style: TextStyle(color: AppColors.textMain),
-                    ),
-                    onTap: () {
-                      onSelect(c['id'], c['name']);
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'İptal',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return errorCounts.entries.map((entry) {
+      return _buildSummaryChip('${entry.value} ${entry.key}', AppColors.error);
+    }).toList();
   }
 }

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../../core/constants/app_colors.dart';
 
 /// Photo upload section with camera and gallery options
@@ -26,7 +25,7 @@ class PhotoUploadSection extends StatelessWidget {
           children: [
             Expanded(
               child: _buildPhotoButton(
-                icon: LucideIcons.camera,
+                icon: Icons.camera_alt,
                 label: 'Kamera',
                 onTap: () => onPickImage(ImageSource.camera),
               ),
@@ -34,7 +33,7 @@ class PhotoUploadSection extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildPhotoButton(
-                icon: LucideIcons.image,
+                icon: Icons.image,
                 label: 'Galeri',
                 onTap: () => onPickImage(ImageSource.gallery),
               ),
@@ -66,7 +65,7 @@ class PhotoUploadSection extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      LucideIcons.x,
+                      Icons.close,
                       color: Colors.white,
                       size: 16,
                     ),

@@ -12,6 +12,18 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<AuthToken> login(String kullaniciAdi, String parola) async {
+    // 🔓 BYPASS: Test credentials for development without backend
+    if (kullaniciAdi == 'admin' && parola == 'admin123') {
+      // Mock token for bypass login
+      final mockToken = AuthToken(
+        token: 'test-token-bypass-${DateTime.now().millisecondsSinceEpoch}',
+        expiration: DateTime.now().add(const Duration(days: 30)),
+      );
+      await _tokenStorage.saveToken(mockToken.token);
+      return mockToken;
+    }
+
+    // Real backend login
     final tokenDto = await _remoteDataSource.login(kullaniciAdi, parola);
     // Store token
     await _tokenStorage.saveToken(tokenDto.token);
@@ -35,6 +47,20 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<User> getCurrentUser() async {
+    // 🔓 BYPASS: Return mock user for test token
+    final token = await _tokenStorage.getToken();
+    if (token != null && token.startsWith('test-token-bypass')) {
+      return User(
+        id: 1,
+        kullaniciAdi: 'admin',
+        hesapSeviyesi: 'admin',
+        personelId: null,
+        personelAdi: 'Admin User',
+        kayitTarihi: DateTime.now(),
+      );
+    }
+
+    // Real backend call
     return await _remoteDataSource.getCurrentUser();
   }
 

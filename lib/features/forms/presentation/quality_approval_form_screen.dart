@@ -196,6 +196,7 @@ class _QualityApprovalFormScreenState
                                       label: 'Ürün Adı',
                                       controller: _productNameController,
                                       icon: LucideIcons.clipboardList,
+                                      enabled: false,
                                     ),
                                     const SizedBox(height: 16),
                                     Row(
@@ -205,6 +206,7 @@ class _QualityApprovalFormScreenState
                                             label: 'Ürün Türü',
                                             controller: _productTypeController,
                                             icon: LucideIcons.tag,
+                                            enabled: false,
                                           ),
                                         ),
                                         const SizedBox(width: 16),
@@ -417,12 +419,14 @@ class _QualityApprovalFormScreenState
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
     TextAlign textAlign = TextAlign.start,
+    bool enabled = true,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
       textAlign: textAlign,
+      enabled: enabled,
       style: TextStyle(color: AppColors.textMain, fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
@@ -440,19 +444,27 @@ class _QualityApprovalFormScreenState
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+          ),
+        ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: AppColors.error),
         ),
         filled: true,
-        fillColor: AppColors.surfaceLight,
+        fillColor: enabled
+            ? AppColors.surfaceLight
+            : AppColors.surfaceLight.withValues(alpha: 0.5),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 12,
         ),
       ),
       validator: (value) {
-        if (value == null || value.isEmpty) {
+        if (enabled && (value == null || value.isEmpty)) {
           return '$label boş bırakılamaz';
         }
         return null;
@@ -462,6 +474,8 @@ class _QualityApprovalFormScreenState
 
   Widget _buildStatusRadio(String value, Color color) {
     final isSelected = _complianceStatus == value;
+    final isRejected = value == 'RET' && isSelected;
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -489,14 +503,18 @@ class _QualityApprovalFormScreenState
           children: [
             Icon(
               isSelected ? LucideIcons.checkCircle2 : LucideIcons.circle,
-              color: isSelected ? color : AppColors.textSecondary,
+              color: isRejected
+                  ? Colors.white
+                  : (isSelected ? color : AppColors.textSecondary),
               size: 20,
             ),
             const SizedBox(width: 8),
             Text(
               value,
               style: TextStyle(
-                color: isSelected ? color : AppColors.textSecondary,
+                color: isRejected
+                    ? Colors.white
+                    : (isSelected ? color : AppColors.textSecondary),
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
               ),

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/sidebar_navigation.dart';
 import '../../../../core/widgets/forms/form_section_title.dart';
@@ -313,7 +312,7 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
                 border: Border.all(color: AppColors.glassBorder),
               ),
               child: const Icon(
-                LucideIcons.arrowLeft,
+                Icons.arrow_back,
                 color: AppColors.textMain,
                 size: 20,
               ),
@@ -358,7 +357,7 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
           // Product Info Section
           const FormSectionTitle(
             title: 'Giriş Bilgileri',
-            icon: LucideIcons.package,
+            icon: Icons.inventory_2_outlined,
           ),
           const SizedBox(height: 16),
           ProductInfoSection(
@@ -398,7 +397,7 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
           // Error Details Section
           const FormSectionTitle(
             title: 'Hata Detayları',
-            icon: LucideIcons.alertTriangle,
+            icon: Icons.warning_amber_outlined,
           ),
           const SizedBox(height: 16),
           ErrorDetailsSection(
@@ -426,7 +425,7 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
           // Photo Upload Section
           const FormSectionTitle(
             title: 'Fotoğraf Ekle (İsteğe Bağlı)',
-            icon: LucideIcons.camera,
+            icon: Icons.photo_camera_outlined,
           ),
           const SizedBox(height: 16),
           PhotoUploadSection(
