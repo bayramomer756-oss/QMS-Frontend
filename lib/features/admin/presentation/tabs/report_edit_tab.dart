@@ -336,12 +336,10 @@ class _ReportEditTabState extends State<ReportEditTab> {
             ),
             tooltip: 'Düzenle',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('User management coming soon'),
-                  backgroundColor: AppColors.primary,
-                ),
-              );
+              // Navigate to the specific form screen based on the item type (mock mapping)
+              // In a real app, we would pass an ID to fetch existing data.
+              // For now, we reuse the navigation logic to open the target screen.
+              _navigateToEditScreen(index % types.length);
             },
           ),
         ],

@@ -21,16 +21,19 @@ class ScrapAnalysisTab extends ConsumerStatefulWidget {
 class _ScrapAnalysisTabState extends ConsumerState<ScrapAnalysisTab>
     with SingleTickerProviderStateMixin {
   late TabController _factoryTabController;
+  late ScrapAnalysisCubit _cubit;
 
   @override
   void initState() {
     super.initState();
     _factoryTabController = TabController(length: 3, vsync: this);
+    _cubit = ScrapAnalysisCubit();
   }
 
   @override
   void dispose() {
     _factoryTabController.dispose();
+    _cubit.close();
     super.dispose();
   }
 
@@ -94,112 +97,115 @@ class _ScrapAnalysisTabState extends ConsumerState<ScrapAnalysisTab>
       },
     );
 
-    if (result != null && result.isNotEmpty && context.mounted) {
-      context.read<ScrapAnalysisCubit>().importExcelData(result);
+    if (result != null && result.isNotEmpty && mounted) {
+      _cubit.importExcelData(result);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ScrapAnalysisCubit(),
-      child: Builder(
-        builder: (context) {
-          // Listen to Riverpod provider and update Cubit
-          ref.listen(fireKayitFormsProvider, (previous, next) {
-            next.whenData((forms) {
-              // Update Cubit with backend data if needed
-              // For now, we handle conversion inside build or a dedicated method
-              // Ideally, we'd pass this to the Cubit once
-            });
-          });
+    // Correct usage: ref.listen at the top level of the build method
+    ref.listen(fireKayitFormsProvider, (previous, next) {
+      next.whenData((forms) {
+        if (forms.isNotEmpty) {
+          _cubit.processBackendData(forms);
+        }
+      });
+    });
 
-          return Column(
-            children: [
-              // Header & Actions
-              _buildHeader(context),
+    return BlocProvider.value(
+      value: _cubit,
+      child: BlocBuilder<ScrapAnalysisCubit, ScrapAnalysisState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-              // Content
-              Expanded(
-                child: BlocBuilder<ScrapAnalysisCubit, ScrapAnalysisState>(
-                  builder: (context, state) {
-                    if (state.isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+          if (state.error != null) {
+            return Center(child: Text('Hata: ${state.error}'));
+          }
 
-                    if (state.error != null) {
-                      return Center(child: Text('Hata: ${state.error}'));
-                    }
+          return SingleChildScrollView(
+            padding: EdgeInsets.zero, // Padding handled internally
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header & Actions (Now Scrollable)
+                _buildHeader(context),
 
-                    // Merge Mock/Excel Data + Backend Data (if implemented)
-                    // For now, using state.scrapData which has Mock + Excel
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Toplam Özet Kartları
+                      ScrapSummaryCards(data: state.scrapData),
+                      const SizedBox(height: 24),
 
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
+                      // Pasta Grafik
+                      ScrapPieChart(data: state.scrapData),
+                      const SizedBox(height: 32),
+
+                      // Fabrika Detay Tabloları (Yan Yana)
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Toplam Özet Kartları
-                          ScrapSummaryCards(data: state.scrapData),
-                          const SizedBox(height: 24),
-
-                          // Pasta Grafik
-                          ScrapPieChart(data: state.scrapData),
-                          const SizedBox(height: 24),
-
-                          // Fabrika Detay Tabloları
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.glassBorder),
-                            ),
-                            child: Column(
-                              children: [
-                                TabBar(
-                                  controller: _factoryTabController,
-                                  labelColor: AppColors.textMain,
-                                  unselectedLabelColor: AppColors.textSecondary,
-                                  indicatorColor: AppColors.primary,
-                                  tabs: const [
-                                    Tab(text: 'FRENBU'),
-                                    Tab(text: 'D2 FABRİKA'),
-                                    Tab(text: 'D3 FABRİKA'),
-                                  ],
-                                ),
-                                SizedBox(
-                                  height: 500,
-                                  child: TabBarView(
-                                    controller: _factoryTabController,
-                                    children: [
-                                      ScrapFactoryTable(
-                                        data: state.scrapData,
-                                        factory: 'FRENBU',
-                                      ),
-                                      ScrapFactoryTable(
-                                        data: state.scrapData,
-                                        factory: 'D2',
-                                      ),
-                                      ScrapFactoryTable(
-                                        data: state.scrapData,
-                                        factory: 'D3',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                          Expanded(
+                            child: ScrapFactoryTable(
+                              data: state.scrapData,
+                              factory: 'FRENBU',
                             ),
                           ),
-
-                          // Backend Fire Section (kept simplified or refactored)
-                          // For this refactor, we focus on the main analysis parts
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ScrapFactoryTable(
+                              data: state.scrapData,
+                              factory: 'D2',
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ScrapFactoryTable(
+                              data: state.scrapData,
+                              factory: 'D3',
+                            ),
+                          ),
                         ],
                       ),
-                    );
-                  },
+                      const SizedBox(height: 32),
+
+                      // DETAY TABLOLARI (Frenbu Hata Dağılımı)
+                      ScrapDefectDistributionTable(
+                        data: state.scrapData,
+                        factory: 'FRENBU',
+                      ),
+                      const SizedBox(height: 32),
+
+                      // DETAY TABLOLARI (Firesiz Üretim) - D2 ve D3 Yan Yana
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: NonScrapProductionTable(
+                              data: state.scrapData,
+                              factory: 'D2',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: NonScrapProductionTable(
+                              data: state.scrapData,
+                              factory: 'D3',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 48), // Bottom padding
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -215,28 +221,26 @@ class _ScrapAnalysisTabState extends ConsumerState<ScrapAnalysisTab>
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Fire Oranlama Analizi',
+                      'Fire Analiz Sayfası',
                       style: TextStyle(
                         color: AppColors.textMain,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      'Geçmişe yönelik fire analizi',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
                   ],
                 ),
               ),
+
+              // Moved Date Filter Here
+              _buildDateFilter(context),
+              const SizedBox(width: 12),
+
               ElevatedButton.icon(
                 onPressed: () => _showExcelDialog(context),
                 icon: const Icon(LucideIcons.upload, size: 18),
@@ -244,13 +248,14 @@ class _ScrapAnalysisTabState extends ConsumerState<ScrapAnalysisTab>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.duzceGreen,
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Date Filter Widget (could be extracted later)
-          _buildDateFilter(context),
         ],
       ),
     );
@@ -260,45 +265,44 @@ class _ScrapAnalysisTabState extends ConsumerState<ScrapAnalysisTab>
     return BlocBuilder<ScrapAnalysisCubit, ScrapAnalysisState>(
       builder: (context, state) {
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: AppColors.background,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.glassBorder),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min, // Shrink to fit
             children: [
               const Icon(
                 LucideIcons.calendar,
                 color: AppColors.primary,
-                size: 18,
+                size: 16,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               const Text(
-                'Analiz Dönemi:',
+                'Periyot:',
                 style: TextStyle(
                   color: AppColors.textMain,
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 16),
-              _buildDatePicker(context, 'Başlangıç', state.analysisStartDate, (
-                date,
-              ) {
+              const SizedBox(width: 12),
+              _buildDatePicker(context, state.analysisStartDate, (date) {
                 context.read<ScrapAnalysisCubit>().updateAnalysisDateRange(
                   date,
                   state.analysisEndDate,
                 );
               }),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               const Icon(
                 LucideIcons.arrowRight,
                 color: AppColors.textSecondary,
-                size: 14,
+                size: 12,
               ),
-              const SizedBox(width: 12),
-              _buildDatePicker(context, 'Bitiş', state.analysisEndDate, (date) {
+              const SizedBox(width: 8),
+              _buildDatePicker(context, state.analysisEndDate, (date) {
                 context.read<ScrapAnalysisCubit>().updateAnalysisDateRange(
                   state.analysisStartDate,
                   date,
@@ -313,7 +317,6 @@ class _ScrapAnalysisTabState extends ConsumerState<ScrapAnalysisTab>
 
   Widget _buildDatePicker(
     BuildContext context,
-    String label,
     DateTime date,
     Function(DateTime) onSelect,
   ) {
@@ -338,44 +341,21 @@ class _ScrapAnalysisTabState extends ConsumerState<ScrapAnalysisTab>
         );
         if (picked != null) onSelect(picked);
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(8),
+          color: AppColors.surfaceLight.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: AppColors.glassBorder),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 10,
-                  ),
-                ),
-                Text(
-                  DateFormat('dd.MM.yyyy').format(date),
-                  style: const TextStyle(
-                    color: AppColors.textMain,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 6),
-            const Icon(
-              LucideIcons.calendar,
-              color: AppColors.primary,
-              size: 14,
-            ),
-          ],
+        child: Text(
+          DateFormat('dd.MM.yyyy').format(date),
+          style: const TextStyle(
+            color: AppColors.textMain,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

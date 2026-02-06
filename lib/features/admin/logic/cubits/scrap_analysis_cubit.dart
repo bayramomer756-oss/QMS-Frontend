@@ -11,105 +11,24 @@ class ScrapAnalysisCubit extends Cubit<ScrapAnalysisState> {
   }
 
   void _loadMockData() {
-    // Initial Mock Data
-    final mockData = [
-      ScrapData(
-        factory: 'FRENBU',
-        productType: 'Disk',
-        productCode: '4210010',
-        productionQty: 254,
-        scrapQty: 2,
-        defectReason: 'Elmas Kırması',
-      ),
-      ScrapData(
-        factory: 'FRENBU',
-        productType: 'Kampana',
-        productCode: '5025920',
-        productionQty: 40,
-        scrapQty: 1,
-        defectReason: 'Darbeye Bağlı Kırık',
-      ),
-      ScrapData(
-        factory: 'FRENBU',
-        productType: 'Disk',
-        productCode: '6310051',
-        productionQty: 128,
-        scrapQty: 1,
-        defectReason: 'Malzeme Kaldırmış',
-      ),
-      ScrapData(
-        factory: 'FRENBU',
-        productType: 'Disk',
-        productCode: '6310481',
-        productionQty: 59,
-        scrapQty: 4,
-        defectReason: 'Elmas Kırması',
-      ),
-      ScrapData(
-        factory: 'FRENBU',
-        productType: 'Disk',
-        productCode: '6312011',
-        productionQty: 456,
-        scrapQty: 3,
-        defectReason: 'Robot Sensör Hatası',
-      ),
-      ScrapData(
-        factory: 'D2',
-        productType: 'Disk',
-        productCode: '4810300',
-        productionQty: 99,
-        scrapQty: 2,
-      ),
-      ScrapData(
-        factory: 'D2',
-        productType: 'Disk',
-        productCode: '6310481',
-        productionQty: 59,
-        scrapQty: 1,
-      ),
-      ScrapData(
-        factory: 'D2',
-        productType: 'Porya',
-        productCode: '6340050',
-        productionQty: 126,
-        scrapQty: 1,
-      ),
-      ScrapData(
-        factory: 'D3',
-        productType: 'Disk',
-        productCode: '1810360',
-        productionQty: 27,
-        scrapQty: 4,
-      ),
-      ScrapData(
-        factory: 'D3',
-        productType: 'Disk',
-        productCode: '4210010',
-        productionQty: 254,
-        scrapQty: 10,
-      ),
-      ScrapData(
-        factory: 'D3',
-        productType: 'Disk',
-        productCode: '4210020',
-        productionQty: 268,
-        scrapQty: 11,
-      ),
-      ScrapData(
-        factory: 'D3',
-        productType: 'Kampana',
-        productCode: '5025940',
-        productionQty: 112,
-        scrapQty: 1,
-      ),
-      ScrapData(
-        factory: 'D3',
-        productType: 'Disk',
-        productCode: '6312011',
-        productionQty: 456,
-        scrapQty: 29,
-      ),
-    ];
+    // Generate 55 Mock Items
+    final List<ScrapData> mockData = [];
+    final factories = ['FRENBU', 'D2', 'D3'];
+    final products = ['Disk', 'Kampana', 'Porya', 'Volan'];
+
+    for (int i = 0; i < 55; i++) {
+      final factory = factories[i % 3];
+      mockData.add(
+        ScrapData(
+          factory: factory,
+          productType: products[i % 4],
+          productCode: '${4000000 + i * 105}', // Unique-ish codes
+          productionQty: 100 + (i * 12),
+          scrapQty: (i % 10) == 0 ? 0 : (i % 5) + 1, // Varied scrap
+          defectReason: (i % 7) == 0 ? 'Darbeye Bağlı Kırık' : '',
+        ),
+      );
+    }
     emit(state.copyWith(scrapData: mockData, isLoading: false));
   }
 
@@ -157,11 +76,13 @@ class ScrapAnalysisCubit extends Cubit<ScrapAnalysisState> {
     }
   }
 
-  // Backend Verilerini ScrapData'ya Dönüştür ve Ekle (Opsiyonel)
+  // Backend Verilerini ScrapData'ya Dönüştür ve Ekle
   void processBackendData(List<FireKayitFormu> forms) {
-    // Bu metot backend verilerini alıp mevcut scrapData ile birleştirebilir veya
-    // sadece backend verilerini gösterebilir.
-    // Şimdilik sadece convert metodunun mantığını buraya taşıyoruz.
+    final backendData = convertFireFormsToScrapData(forms);
+    // Backend verisi gelince mock veriyi eziyoruz (Şimdilik)
+    if (backendData.isNotEmpty) {
+      emit(state.copyWith(scrapData: backendData, isLoading: false));
+    }
   }
 
   List<ScrapData> convertFireFormsToScrapData(List<FireKayitFormu> forms) {
