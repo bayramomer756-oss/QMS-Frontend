@@ -54,48 +54,79 @@ class SampleTestFormCard extends StatelessWidget {
           // Data rows
           ...sampleData.map((data) {
             final isSuccess = data['result'] == 'BAŞARILI';
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: AppColors.border.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      data['product'] as String,
-                      style: const TextStyle(
-                        color: AppColors.textMain,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      data['testDate'] as String,
+            return InkWell(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: AppColors.surface,
+                    title: Text(
+                      'Test Sonuç Detayı',
                       style: const TextStyle(color: AppColors.textMain),
                     ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetailRow('Ürün:', data['product'] as String),
+                        _buildDetailRow('Tarih:', data['testDate'] as String),
+                        _buildDetailRow('Sonuç:', data['result'] as String),
+                        _buildDetailRow('Test Eden:', data['tester'] as String),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Ölçüm Değerleri:',
+                          style: TextStyle(
+                            color: AppColors.textMain,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // Mock detaylar
+                        const Text(
+                          '- Çap: 250mm (Referans: 250mm)\n- Kalınlık: 24mm (Referans: 24mm)\n- Yüzey: OK',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Kapat'),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        data['product'] as String,
+                        style: const TextStyle(
+                          color: AppColors.textMain,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: isSuccess
-                            ? AppColors.duzceGreen.withValues(alpha: 0.15)
-                            : AppColors.error.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
+                    ),
+                    Expanded(
+                      child: Text(
+                        data['testDate'] as String,
+                        style: const TextStyle(color: AppColors.textMain),
                       ),
+                    ),
+                    Expanded(
                       child: Text(
                         data['result'] as String,
-                        textAlign: TextAlign.center,
+                        textAlign: TextAlign.start,
                         style: TextStyle(
                           color: isSuccess
                               ? AppColors.duzceGreen
@@ -105,18 +136,42 @@ class SampleTestFormCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      data['tester'] as String,
-                      style: const TextStyle(color: AppColors.textSecondary),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.only(left: 20),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          data['tester'] as String,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label ',
+            style: const TextStyle(
+              color: AppColors.textMain,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(value, style: const TextStyle(color: AppColors.textSecondary)),
         ],
       ),
     );

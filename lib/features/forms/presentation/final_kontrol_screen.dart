@@ -5,6 +5,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
 import '../../../core/widgets/dialogs/hurda_selection_dialog.dart';
+import '../../../core/widgets/forms/product_info_card.dart';
+import '../../../core/widgets/forms/modern_quick_button.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
 import '../logic/cubits/production_counter_cubit.dart';
@@ -76,22 +78,28 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
     });
   }
 
-  void _addToPaketlenen() {
-    context.read<ProductionCounterCubit>().incrementPaketlenen(_currentAmount);
+  void _addToPaketlenen([BuildContext? ctx]) {
+    final cubitContext = ctx ?? context;
+    print('DEBUG: _addToPaketlenen called with amount: $_currentAmount');
+    cubitContext.read<ProductionCounterCubit>().incrementPaketlenen(
+      _currentAmount,
+    );
     _resetAmount();
   }
 
-  void _addToRework() {
-    context.read<ProductionCounterCubit>().incrementRework(_currentAmount);
+  void _addToRework([BuildContext? ctx]) {
+    final cubitContext = ctx ?? context;
+    cubitContext.read<ProductionCounterCubit>().incrementRework(_currentAmount);
     _resetAmount();
   }
 
-  void _showHurdaPopup() {
+  void _showHurdaPopup([BuildContext? ctx]) {
+    final cubitContext = ctx ?? context;
     showDialog(
-      context: context,
+      context: cubitContext,
       builder: (context) => HurdaSelectionDialog(
         onReasonSelected: (reason) {
-          context.read<ProductionCounterCubit>().incrementHurda(
+          cubitContext.read<ProductionCounterCubit>().incrementHurda(
             _currentAmount,
             reason,
           );
@@ -236,22 +244,35 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
                                       children: [
-                                        // Product Info Row - First Row
+                                        // Product Info Card (full width with dropdown)
+                                        ProductInfoCard(
+                                          productCodeController:
+                                              _productCodeController,
+                                          productName: _productName.isEmpty
+                                              ? null
+                                              : _productName,
+                                          productType: _productType.isEmpty
+                                              ? null
+                                              : _productType,
+                                          onProductCodeChanged:
+                                              _onProductCodeChanged,
+                                          onProductSelected: (product) {
+                                            setState(() {
+                                              _productName = product.urunAdi;
+                                              _productType = product.urunTuru;
+                                            });
+                                            context
+                                                .read<ProductionCounterCubit>()
+                                                .setProductInfo(
+                                                  product.urunAdi,
+                                                  product.urunTuru,
+                                                );
+                                          },
+                                        ),
+                                        const SizedBox(height: 16),
+                                        // Customer Name + Palet İzlenebilirlik (side by side)
                                         Row(
                                           children: [
-                                            Expanded(
-                                              child: _buildInputField(
-                                                label: 'Ürün Kodu',
-                                                controller:
-                                                    _productCodeController,
-                                                icon: LucideIcons.box,
-                                                keyboardType:
-                                                    TextInputType.number,
-                                                onChanged:
-                                                    _onProductCodeChanged,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 16),
                                             Expanded(
                                               child: _buildInputField(
                                                 label: 'Müşteri Adı',
@@ -262,39 +283,18 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
                                                     TextInputType.text,
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildReadOnlyField(
-                                                label: 'Ürün Adı',
-                                                value: _productName.isEmpty
-                                                    ? 'Ürün kodu giriniz'
-                                                    : _productName,
-                                                icon: LucideIcons.clipboardList,
-                                              ),
-                                            ),
                                             const SizedBox(width: 16),
                                             Expanded(
-                                              child: _buildReadOnlyField(
-                                                label: 'Ürün Türü',
-                                                value: _productType.isEmpty
-                                                    ? 'Ürün kodu giriniz'
-                                                    : _productType,
-                                                icon: LucideIcons.layers,
+                                              child: _buildInputField(
+                                                label:
+                                                    'Palet İzlenebilirlik No',
+                                                controller: _paletNoController,
+                                                icon: LucideIcons.tag,
+                                                keyboardType:
+                                                    TextInputType.text,
                                               ),
                                             ),
                                           ],
-                                        ),
-                                        const SizedBox(height: 16),
-                                        // Palet İzlenebilirlik No
-                                        _buildInputField(
-                                          label: 'Palet İzlenebilirlik No',
-                                          controller: _paletNoController,
-                                          icon: LucideIcons.tag,
-                                          keyboardType: TextInputType.text,
                                         ),
                                         const SizedBox(height: 24),
                                         Divider(color: AppColors.border),
@@ -482,33 +482,47 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
                                                     ],
                                                   ),
                                                   const SizedBox(height: 8),
-                                                  // Quick Add
+                                                  // Quick Add/Subtract with modern buttons
                                                   Row(
                                                     children: [
-                                                      _buildQuickButton(
-                                                        '+5',
-                                                        () => _updateAmount(5),
+                                                      ModernQuickButton(
+                                                        label: '+5',
+                                                        onPressed: () =>
+                                                            _updateAmount(5),
+                                                        color: AppColors
+                                                            .duzceGreen,
+                                                        icon: LucideIcons.plus,
                                                       ),
                                                       const SizedBox(width: 8),
-                                                      _buildQuickButton(
-                                                        '+10',
-                                                        () => _updateAmount(10),
+                                                      ModernQuickButton(
+                                                        label: '+10',
+                                                        onPressed: () =>
+                                                            _updateAmount(10),
+                                                        color: AppColors
+                                                            .duzceGreen,
+                                                        icon: LucideIcons
+                                                            .chevronsUp,
                                                       ),
                                                     ],
                                                   ),
                                                   const SizedBox(height: 8),
-                                                  // Quick Subtract
                                                   Row(
                                                     children: [
-                                                      _buildQuickButton(
-                                                        '-5',
-                                                        () => _updateAmount(-5),
+                                                      ModernQuickButton(
+                                                        label: '-5',
+                                                        onPressed: () =>
+                                                            _updateAmount(-5),
+                                                        color: AppColors.error,
+                                                        icon: LucideIcons.minus,
                                                       ),
                                                       const SizedBox(width: 8),
-                                                      _buildQuickButton(
-                                                        '-10',
-                                                        () =>
+                                                      ModernQuickButton(
+                                                        label: '-10',
+                                                        onPressed: () =>
                                                             _updateAmount(-10),
+                                                        color: AppColors.error,
+                                                        icon: LucideIcons
+                                                            .chevronsDown,
                                                       ),
                                                     ],
                                                   ),
@@ -529,36 +543,46 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
                                         ),
                                         const SizedBox(height: 12),
 
-                                        // Action Buttons
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildActionButton(
-                                                'PAKETLENEN EKLE',
-                                                AppColors.almanyaBlue,
-                                                LucideIcons.package,
-                                                _addToPaketlenen,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: _buildActionButton(
-                                                'REWORK EKLE',
-                                                AppColors.reworkOrange,
-                                                LucideIcons.wrench,
-                                                _addToRework,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: _buildActionButton(
-                                                'HURDA EKLE',
-                                                AppColors.error,
-                                                LucideIcons.trash2,
-                                                _showHurdaPopup,
-                                              ),
-                                            ),
-                                          ],
+                                        // Action Buttons - Wrapped in Builder for correct context
+                                        Builder(
+                                          builder: (btnContext) {
+                                            return Row(
+                                              children: [
+                                                Expanded(
+                                                  child: _buildActionButton(
+                                                    'PAKETLENEN EKLE',
+                                                    AppColors.almanyaBlue,
+                                                    LucideIcons.package,
+                                                    () => _addToPaketlenen(
+                                                      btnContext,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: _buildActionButton(
+                                                    'REWORK EKLE',
+                                                    AppColors.reworkOrange,
+                                                    LucideIcons.wrench,
+                                                    () => _addToRework(
+                                                      btnContext,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: _buildActionButton(
+                                                    'HURDA EKLE',
+                                                    AppColors.error,
+                                                    LucideIcons.trash2,
+                                                    () => _showHurdaPopup(
+                                                      btnContext,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
                                         ),
                                         const SizedBox(height: 16),
                                         // Açıklama
@@ -651,61 +675,70 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
                                         ),
                                         const SizedBox(height: 24),
                                         // Conditional spacing removed - handled by BlocBuilder
-                                        // Save Button
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton.icon(
-                                            onPressed: () {
-                                              // Reset all fields
-                                              context
-                                                  .read<
-                                                    ProductionCounterCubit
-                                                  >()
-                                                  .clearAll();
-                                              setState(() {
-                                                _amountController.text = '1';
-                                                _productCodeController.clear();
-                                                _customerNameController.clear();
-                                                _paletNoController.clear();
-                                                _aciklamaController.clear();
-                                                _productName = '';
-                                                _productType = '';
-                                              });
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: const Text(
-                                                    'Veriler kaydedildi ve sıfırlandı',
-                                                  ),
+                                        // Save Button - Wrapped for correct context
+                                        Builder(
+                                          builder: (btnContext) {
+                                            return SizedBox(
+                                              width: double.infinity,
+                                              child: ElevatedButton.icon(
+                                                onPressed: () {
+                                                  // Reset all fields
+                                                  btnContext
+                                                      .read<
+                                                        ProductionCounterCubit
+                                                      >()
+                                                      .clearAll();
+                                                  setState(() {
+                                                    _amountController.text =
+                                                        '1';
+                                                    _productCodeController
+                                                        .clear();
+                                                    _customerNameController
+                                                        .clear();
+                                                    _paletNoController.clear();
+                                                    _aciklamaController.clear();
+                                                    _productName = '';
+                                                    _productType = '';
+                                                  });
+                                                  ScaffoldMessenger.of(
+                                                    btnContext,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: const Text(
+                                                        'Veriler kaydedildi ve sıfırlandı',
+                                                      ),
+                                                      backgroundColor:
+                                                          AppColors.duzceGreen,
+                                                      duration: const Duration(
+                                                        seconds: 2,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                icon: const Icon(
+                                                  LucideIcons.save,
+                                                  size: 18,
+                                                ),
+                                                label: const Text('KAYDET'),
+                                                style: ElevatedButton.styleFrom(
                                                   backgroundColor:
                                                       AppColors.duzceGreen,
-                                                  duration: const Duration(
-                                                    seconds: 2,
+                                                  foregroundColor: Colors.white,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 16,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
                                                   ),
+                                                  elevation: 0,
                                                 ),
-                                              );
-                                            },
-                                            icon: const Icon(
-                                              LucideIcons.save,
-                                              size: 18,
-                                            ),
-                                            label: const Text('KAYDET'),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  AppColors.duzceGreen,
-                                              foregroundColor: Colors.white,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 16,
-                                                  ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
                                               ),
-                                              elevation: 0,
-                                            ),
-                                          ),
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
@@ -728,44 +761,6 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
   }
 
   // --- Helpers ---
-
-  Widget _buildReadOnlyField({
-    required String label,
-    required String value,
-    required IconData icon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: AppColors.textSecondary, size: 18),
-              const SizedBox(width: 12),
-              Text(
-                value,
-                style: TextStyle(
-                  color: AppColors.textMain,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildInputField({
     required String label,
@@ -828,33 +823,16 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
     );
   }
 
-  Widget _buildQuickButton(String label, VoidCallback onTap) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildCounterDisplay(String label, int value, Color color) {
+    // TOPLAM gets white background, others use their color
+    final bgColor = label == 'TOPLAM'
+        ? Colors.white.withValues(alpha: 0.1)
+        : color.withValues(alpha: 0.1);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: bgColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),

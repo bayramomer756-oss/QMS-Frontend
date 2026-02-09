@@ -38,7 +38,11 @@ class CustomRadioOption extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 18),
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
             const SizedBox(width: 8),
             Text(
               value,

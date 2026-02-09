@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'sync_service.dart';
 import '../providers/app_providers.dart';
+import '../utils/app_logger.dart';
 
 part 'connectivity_service.g.dart';
 
@@ -37,7 +38,7 @@ class ConnectivityService {
   // ============================================================================
 
   Future<void> initialize() async {
-    print('🌐 Connectivity service başlatılıyor...');
+    AppLogger.network('Connectivity service başlatılıyor...');
 
     // İlk durumu kontrol et
     await _checkInitialConnectivity();
@@ -46,11 +47,15 @@ class ConnectivityService {
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
       _onConnectivityChanged,
       onError: (error) {
-        print('❌ Connectivity error: $error');
+        AppLogger.error(
+          'Connectivity error',
+          error: error,
+          tag: 'ConnectivityService',
+        );
       },
     );
 
-    print('✅ Connectivity service hazır');
+    AppLogger.success('Connectivity service hazır');
   }
 
   Future<void> _checkInitialConnectivity() async {
@@ -58,7 +63,11 @@ class ConnectivityService {
       final results = await _connectivity.checkConnectivity();
       await _onConnectivityChanged(results);
     } catch (e) {
-      print('⚠️ İlk connectivity kontrolü başarısız: $e');
+      AppLogger.warning(
+        'İlk connectivity kontrolü başarısız',
+        error: e,
+        tag: 'ConnectivityService',
+      );
       _updateState(ConnectionState.offline);
     }
   }
@@ -68,7 +77,7 @@ class ConnectivityService {
   // ============================================================================
 
   Future<void> _onConnectivityChanged(List<ConnectivityResult> results) async {
-    print('📡 Connectivity değişti: $results');
+    AppLogger.network('Connectivity değişti: $results');
 
     // None varsa offline
     if (results.contains(ConnectivityResult.none)) {
@@ -88,7 +97,10 @@ class ConnectivityService {
 
   /// Gerçek internet erişimi kontrolü (ping-like)
   Future<void> _verifyInternetAccess() async {
-    print('🔍 İnternet erişimi doğrulanıyor...');
+    AppLogger.debug(
+      'İnternet erişimi doğrulanıyor...',
+      tag: 'ConnectivityService',
+    );
 
     try {
       // Backend'e hafif bir health check isteği
@@ -101,17 +113,23 @@ class ConnectivityService {
       );
 
       if (response.statusCode == 200) {
-        print('✅ İnternet erişimi doğrulandı');
+        AppLogger.success('İnternet erişimi doğrulandı');
         _updateState(ConnectionState.online);
 
         // Otomatik sync tetikle (debounced)
         _debouncedSync();
       } else {
-        print('⚠️ Server yanıt verdi ama durum kodu: ${response.statusCode}');
+        AppLogger.warning(
+          'Server yanıt verdi ama durum kodu: ${response.statusCode}',
+          tag: 'ConnectivityService',
+        );
         _updateState(ConnectionState.limited);
       }
     } on DioException catch (e) {
-      print('⚠️ İnternet doğrulaması başarısız: ${e.type}');
+      AppLogger.warning(
+        'İnternet doğrulaması başarısız: ${e.type}',
+        tag: 'ConnectivityService',
+      );
 
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
@@ -122,7 +140,11 @@ class ConnectivityService {
         _updateState(ConnectionState.limited);
       }
     } catch (e) {
-      print('❌ İnternet doğrulama hatası: $e');
+      AppLogger.error(
+        'İnternet doğrulama hatası',
+        error: e,
+        tag: 'ConnectivityService',
+      );
       _updateState(ConnectionState.offline);
     }
   }
@@ -136,13 +158,13 @@ class ConnectivityService {
     final isOnline = newState == ConnectionState.online;
 
     if (_currentState != newState) {
-      print('🔄 Bağlantı durumu: $_currentState → $newState');
+      AppLogger.sync('Bağlantı durumu: $_currentState → $newState');
       _currentState = newState;
       _stateController.add(newState);
 
       // Offline'dan online'a geçiş → Sync tetikle
       if (!wasOnline && isOnline) {
-        print('🚀 İnternet geldi! Senkronizasyon tetikleniyor...');
+        AppLogger.info('İnternet geldi! Senkronizasyon tetikleniyor...');
         _debouncedSync();
       }
     }
@@ -162,7 +184,7 @@ class ConnectivityService {
 
   /// Manuel connectivity kontrolü (kullanıcı "Yenile" butonuna bastığında)
   Future<void> refresh() async {
-    print('🔄 Manuel connectivity kontrolü...');
+    AppLogger.sync('Manuel connectivity kontrolü...');
     await _checkInitialConnectivity();
   }
 
@@ -180,7 +202,7 @@ class ConnectivityService {
     _connectivitySubscription?.cancel();
     _syncDebounceTimer?.cancel();
     _stateController.close();
-    print('🛑 Connectivity service durduruldu');
+    AppLogger.info('Connectivity service durduruldu');
   }
 }
 

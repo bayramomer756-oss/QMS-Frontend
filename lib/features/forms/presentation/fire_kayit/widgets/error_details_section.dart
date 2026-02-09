@@ -1,40 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_colors.dart';
-import '../../../../../core/widgets/forms/custom_dropdown.dart';
 
-/// Error details section with Şarj No picker and error reason
-class ErrorDetailsSection extends StatefulWidget {
+/// Şarj No picker section (without error reason)
+class SarjNoSection extends StatefulWidget {
   final TextEditingController sarjDayController;
   final TextEditingController sarjLineController;
   final int sarjYear;
   final String sarjFoundry;
   final List<String> foundryOptions;
-  final String? selectedErrorReason;
-  final List<String> errorReasons;
   final Function(int) onYearChanged;
   final Function(String) onFoundryChanged;
-  final Function(String?) onErrorReasonChanged;
 
-  const ErrorDetailsSection({
+  const SarjNoSection({
     super.key,
     required this.sarjDayController,
     required this.sarjLineController,
     required this.sarjYear,
     required this.sarjFoundry,
     required this.foundryOptions,
-    required this.selectedErrorReason,
-    required this.errorReasons,
     required this.onYearChanged,
     required this.onFoundryChanged,
-    required this.onErrorReasonChanged,
   });
 
   @override
-  State<ErrorDetailsSection> createState() => _ErrorDetailsSectionState();
+  State<SarjNoSection> createState() => _SarjNoSectionState();
 }
 
-class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
+class _SarjNoSectionState extends State<SarjNoSection> {
   String get _batchNo {
     final dayStr = widget.sarjDayController.text.padLeft(3, '0');
     final lineStr = widget.sarjLineController.text.isNotEmpty
@@ -69,11 +62,7 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
                   const SizedBox(
                     width: 18,
                     height: 18,
-                    child: Icon(
-                      Icons.numbers,
-                      color: AppColors.textSecondary,
-                      size: 18,
-                    ),
+                    child: Icon(Icons.numbers, color: Colors.white, size: 18),
                   ),
                   const SizedBox(width: 12),
                   // Year
@@ -208,15 +197,6 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        // Error Reason Dropdown
-        CustomDropdown(
-          label: 'Hata Nedeni',
-          value: widget.selectedErrorReason,
-          items: widget.errorReasons,
-          icon: Icons.error_outline,
-          onChanged: widget.onErrorReasonChanged,
-        ),
       ],
     );
   }
@@ -240,11 +220,7 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
             onTap: onDecrement,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Icon(
-                Icons.chevron_left,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
+              child: Icon(Icons.chevron_left, size: 16, color: Colors.white),
             ),
           ),
           Padding(
@@ -262,11 +238,7 @@ class _ErrorDetailsSectionState extends State<ErrorDetailsSection> {
             onTap: onIncrement,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
+              child: Icon(Icons.chevron_right, size: 16, color: Colors.white),
             ),
           ),
         ],

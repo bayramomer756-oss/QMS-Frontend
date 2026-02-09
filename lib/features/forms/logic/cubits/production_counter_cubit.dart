@@ -45,19 +45,31 @@ class ProductionCounterCubit extends Cubit<ProductionCounterState> {
 
   /// Increment Düzce counter (for SAF B9)
   void incrementDuzce(int amount) {
+    print(
+      'DEBUG CUBIT: incrementDuzce called with $amount, current duzce: ${state.duzce}',
+    );
     emit(
       state.copyWith(duzce: state.duzce + amount, total: state.total + amount),
+    );
+    print(
+      'DEBUG CUBIT: After emit - duzce: ${state.duzce}, total: ${state.total}',
     );
     _addLog('duzce', amount);
   }
 
   /// Increment Almanya counter (for SAF B9)
   void incrementAlmanya(int amount) {
+    print(
+      'DEBUG CUBIT: incrementAlmanya called with $amount, current almanya: ${state.almanya}',
+    );
     emit(
       state.copyWith(
         almanya: state.almanya + amount,
         total: state.total + amount,
       ),
+    );
+    print(
+      'DEBUG CUBIT: After emit - almanya: ${state.almanya}, total: ${state.total}',
     );
     _addLog('almanya', amount);
   }

@@ -14,7 +14,7 @@ class FinalControlCard extends StatelessWidget {
     ];
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -160,7 +160,11 @@ class FinalControlCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             title,
-            style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 13),
+            style: TextStyle(
+              color: color.withValues(alpha: 0.8),
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
         ],

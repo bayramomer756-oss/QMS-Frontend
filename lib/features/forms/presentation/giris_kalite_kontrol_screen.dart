@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
+import '../../../core/widgets/forms/product_info_card.dart';
 
 class GirisKaliteKontrolScreen extends StatefulWidget {
   final DateTime? initialDate;
@@ -253,51 +254,36 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                 ),
                                 const SizedBox(height: 12),
 
-                                // Ürün Kodu, Adet
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: _buildInputField(
-                                        label: 'Ürün Kodu',
-                                        controller: _productCodeController,
-                                        icon: LucideIcons.box,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _buildInputField(
-                                        label: 'Gelen Miktar',
-                                        controller: _quantityController,
-                                        icon: LucideIcons.layers,
-                                        keyboardType: TextInputType.number,
-                                      ),
-                                    ),
-                                  ],
+                                // Ürün Bilgisi
+                                ProductInfoCard(
+                                  productCodeController: _productCodeController,
+                                  productName: _productNameController.text,
+                                  productType: _productTypeController.text,
+                                  onProductCodeChanged: (code) {
+                                    setState(() {
+                                      if (code.isEmpty) {
+                                        _productNameController.clear();
+                                        _productTypeController.clear();
+                                      }
+                                    });
+                                  },
+                                  onProductSelected: (product) {
+                                    setState(() {
+                                      _productNameController.text =
+                                          product.urunAdi;
+                                      _productTypeController.text =
+                                          product.urunTuru;
+                                    });
+                                  },
                                 ),
                                 const SizedBox(height: 12),
 
-                                // Ürün Adı, Türü
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildInputField(
-                                        label: 'Ürün Adı',
-                                        controller: _productNameController,
-                                        icon: LucideIcons.tag,
-                                        enabled: false,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _buildInputField(
-                                        label: 'Ürün Türü',
-                                        controller: _productTypeController,
-                                        icon: LucideIcons.layoutGrid,
-                                        enabled: false,
-                                      ),
-                                    ),
-                                  ],
+                                // Adet
+                                _buildInputField(
+                                  label: 'Gelen Miktar',
+                                  controller: _quantityController,
+                                  icon: LucideIcons.layers,
+                                  keyboardType: TextInputType.number,
                                 ),
                                 const SizedBox(height: 24),
 

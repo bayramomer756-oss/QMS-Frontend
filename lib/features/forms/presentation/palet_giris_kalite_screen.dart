@@ -18,6 +18,7 @@ class _GKKEntry {
   final String muhurKontrol;
   final String irsaliyeKontrol;
   final String note;
+  final String productName;
   final DateTime timestamp;
 
   _GKKEntry({
@@ -28,6 +29,7 @@ class _GKKEntry {
     required this.muhurKontrol,
     required this.irsaliyeKontrol,
     required this.note,
+    this.productName = '',
     required this.timestamp,
   });
 }
@@ -35,11 +37,13 @@ class _GKKEntry {
 class PaletGirisKaliteScreen extends StatefulWidget {
   final String supplierName;
   final String invoiceNo;
+  final DateTime? initialDate;
 
   const PaletGirisKaliteScreen({
     super.key,
     this.supplierName = '',
     this.invoiceNo = '',
+    this.initialDate,
   });
 
   @override
@@ -59,6 +63,7 @@ class _PaletGirisKaliteScreenState extends State<PaletGirisKaliteScreen> {
     final humidityController = TextEditingController();
     String? pickedImagePath;
     final noteController = TextEditingController();
+    final productNameController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -150,6 +155,32 @@ class _PaletGirisKaliteScreenState extends State<PaletGirisKaliteScreen> {
                                     ],
                                   )
                                 : null,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Ürün Adı
+                        TextField(
+                          controller: productNameController,
+                          style: const TextStyle(color: AppColors.textMain),
+                          decoration: InputDecoration(
+                            labelText: 'Ürün Adı',
+                            labelStyle: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                            filled: true,
+                            fillColor: AppColors.surfaceLight.withValues(
+                              alpha: 0.3,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            prefixIcon: const Icon(
+                              LucideIcons.tag,
+                              color: AppColors.textSecondary,
+                              size: 18,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -319,7 +350,8 @@ class _PaletGirisKaliteScreenState extends State<PaletGirisKaliteScreen> {
                         muhurKontrol: muhur,
                         irsaliyeKontrol: irsaliye,
                         note: noteController.text,
-                        timestamp: DateTime.now(),
+                        productName: productNameController.text,
+                        timestamp: widget.initialDate ?? DateTime.now(),
                       );
                       setState(() => _entries.add(newEntry));
                       Navigator.pop(context);
@@ -519,6 +551,36 @@ class _PaletGirisKaliteScreenState extends State<PaletGirisKaliteScreen> {
                         ),
                       ),
 
+                      // Past Date Warning
+                      if (widget.initialDate != null)
+                        Container(
+                          width: double.infinity,
+                          color: AppColors.reworkOrange,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 24,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                LucideIcons.calendarClock,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'GEÇMİŞ TARİHLİ KAYIT MODU: ${widget.initialDate!.day}.${widget.initialDate!.month}.${widget.initialDate!.year}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
                       // List Content
                       Expanded(
                         child: _entries.isEmpty
@@ -639,6 +701,19 @@ class _PaletGirisKaliteScreenState extends State<PaletGirisKaliteScreen> {
                                                   ),
                                                 ],
                                               ),
+                                              if (entry
+                                                  .productName
+                                                  .isNotEmpty) ...[
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  entry.productName,
+                                                  style: const TextStyle(
+                                                    color: AppColors.textMain,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                               const SizedBox(height: 8),
                                               Wrap(
                                                 spacing: 8,

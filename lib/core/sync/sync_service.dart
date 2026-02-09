@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import '../database/database.dart';
+import '../utils/app_logger.dart';
 
 /// Offline-First Sync Service
 /// Parent-Child ilişkilerini koruyarak veri senkronizasyonu yapar
@@ -22,7 +23,10 @@ class SyncService {
 
   Future<SyncResult> syncAll() async {
     if (_isSyncing) {
-      print('⚠️ Senkronizasyon zaten devam ediyor...');
+      AppLogger.warning(
+        'Senkronizasyon zaten devam ediyor...',
+        tag: 'SyncService',
+      );
       await _syncCompleter.future;
       return SyncResult.alreadyRunning();
     }
@@ -32,27 +36,30 @@ class SyncService {
     final result = SyncResult();
 
     try {
-      print('🔄 Senkronizasyon başladı...');
+      AppLogger.sync('Senkronizasyon başladı...');
 
       // 1. PARENT SYNC - Siparişler
-      print('📦 Siparişler senkronize ediliyor...');
+      AppLogger.info('Siparişler senkronize ediliyor...', tag: 'SyncService');
       final siparisResult = await _syncSiparisler();
       result.siparisCount = siparisResult;
 
       // 2. CHILD SYNC - Sipariş Kalemleri
-      print('📋 Sipariş kalemleri senkronize ediliyor...');
+      AppLogger.info(
+        'Sipariş kalemleri senkronize ediliyor...',
+        tag: 'SyncService',
+      );
       final kalemResult = await _syncSiparisKalemleri();
       result.kalemCount = kalemResult;
 
       // 3. DELETE SYNC - Silinmiş kayıtlar
-      print('🗑️ Silinen kayıtlar temizleniyor...');
+      AppLogger.info('Silinen kayıtlar temizleniyor...', tag: 'SyncService');
       await _syncDeletes();
 
       result.success = true;
       result.duration = DateTime.now().difference(startTime);
 
-      print(
-        '✅ Senkronizasyon tamamlandı! '
+      AppLogger.success(
+        'Senkronizasyon tamamlandı! '
         'Sipariş: ${result.siparisCount}, '
         'Kalem: ${result.kalemCount}, '
         'Süre: ${result.duration?.inSeconds ?? 0}s',
@@ -60,8 +67,12 @@ class SyncService {
     } catch (e, stackTrace) {
       result.success = false;
       result.error = e.toString();
-      print('❌ Senkronizasyon hatası: $e');
-      print(stackTrace);
+      AppLogger.error(
+        'Senkronizasyon hatası',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'SyncService',
+      );
     } finally {
       _isSyncing = false;
       if (!_syncCompleter.isCompleted) {
@@ -85,11 +96,14 @@ class SyncService {
     )..where((tbl) => tbl.syncStatus.isNotIn(['synced']))).get();
 
     if (pendingList.isEmpty) {
-      print('  ℹ️ Senkronize edilecek sipariş yok');
+      AppLogger.debug('Senkronize edilecek sipariş yok', tag: 'SyncService');
       return 0;
     }
 
-    print('  📊 ${pendingList.length} sipariş senkronize edilecek');
+    AppLogger.info(
+      '${pendingList.length} sipariş senkronize edilecek',
+      tag: 'SyncService',
+    );
 
     for (final siparis in pendingList) {
       try {
@@ -102,7 +116,11 @@ class SyncService {
         }
         syncedCount++;
       } catch (e) {
-        print('  ❌ Sipariş sync hatası (localId: ${siparis.localId}): $e');
+        AppLogger.error(
+          'Sipariş sync hatası (localId: ${siparis.localId})',
+          error: e,
+          tag: 'SyncService',
+        );
         // Hata logla ama devam et
         await _logSyncError('siparisler', siparis.localId, e.toString());
       }
@@ -154,8 +172,9 @@ class SyncService {
           .write(SiparisKalemleriCompanion(siparisRemoteId: Value(remoteId)));
     });
 
-    print(
-      '  ✓ Sipariş eklendi (localId: ${siparis.localId} → remoteId: $remoteId)',
+    AppLogger.debug(
+      'Sipariş eklendi (localId: ${siparis.localId} → remoteId: $remoteId)',
+      tag: 'SyncService',
     );
   }
 
@@ -189,7 +208,10 @@ class SyncService {
       ),
     );
 
-    print('  ✓ Sipariş güncellendi (remoteId: ${siparis.remoteId})');
+    AppLogger.debug(
+      'Sipariş güncellendi (remoteId: ${siparis.remoteId})',
+      tag: 'SyncService',
+    );
   }
 
   // ============================================================================
@@ -209,11 +231,14 @@ class SyncService {
             .get();
 
     if (pendingList.isEmpty) {
-      print('  ℹ️ Senkronize edilecek kalem yok');
+      AppLogger.debug('Senkronize edilecek kalem yok', tag: 'SyncService');
       return 0;
     }
 
-    print('  📊 ${pendingList.length} kalem senkronize edilecek');
+    AppLogger.info(
+      '${pendingList.length} kalem senkronize edilecek',
+      tag: 'SyncService',
+    );
 
     for (final kalem in pendingList) {
       try {
@@ -224,7 +249,11 @@ class SyncService {
         }
         syncedCount++;
       } catch (e) {
-        print('  ❌ Kalem sync hatası (localId: ${kalem.localId}): $e');
+        AppLogger.error(
+          'Kalem sync hatası (localId: ${kalem.localId})',
+          error: e,
+          tag: 'SyncService',
+        );
         await _logSyncError('siparis_kalemleri', kalem.localId, e.toString());
       }
     }
@@ -261,8 +290,9 @@ class SyncService {
       ),
     );
 
-    print(
-      '  ✓ Kalem eklendi (localId: ${kalem.localId} → remoteId: $remoteId)',
+    AppLogger.debug(
+      'Kalem eklendi (localId: ${kalem.localId} → remoteId: $remoteId)',
+      tag: 'SyncService',
     );
   }
 
@@ -291,7 +321,10 @@ class SyncService {
       ),
     );
 
-    print('  ✓ Kalem güncellendi (remoteId: ${kalem.remoteId})');
+    AppLogger.debug(
+      'Kalem güncellendi (remoteId: ${kalem.remoteId})',
+      tag: 'SyncService',
+    );
   }
 
   // ============================================================================
@@ -316,7 +349,11 @@ class SyncService {
         try {
           await _dio.delete('/api/siparis-kalemleri/${kalem.remoteId}');
         } catch (e) {
-          print('  ⚠️ Server delete hatası (kalem): $e');
+          AppLogger.warning(
+            'Server delete hatası (kalem)',
+            error: e,
+            tag: 'SyncService',
+          );
           // Server'da zaten yoksa devam et
         }
       }
@@ -338,7 +375,11 @@ class SyncService {
         try {
           await _dio.delete('/api/siparisler/${siparis.remoteId}');
         } catch (e) {
-          print('  ⚠️ Server delete hatası (sipariş): $e');
+          AppLogger.warning(
+            'Server delete hatası (sipariş)',
+            error: e,
+            tag: 'SyncService',
+          );
         }
       }
 
@@ -357,10 +398,10 @@ class SyncService {
     int localId,
     String error,
   ) async {
-    // Simple console logging (SyncLog table disabled due to Drift issues)
-    print('⚠️ SYNC ERROR [$tableName:$localId]: $error');
+    // Log using AppLogger utility
+    AppLogger.warning('SYNC ERROR [$tableName:$localId]: $error');
 
-    // TODO: Implement proper logging (e.g., logger package, Sentry, Firebase Crashlytics)
+    // Additional logging can be implemented here (e.g., Sentry, Firebase Crashlytics)
   }
 
   /// Pending kayıt sayısını döndür

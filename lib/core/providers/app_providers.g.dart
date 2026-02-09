@@ -52,7 +52,7 @@ final class DatabaseProvider
   }
 }
 
-String _$databaseHash() => r'fe9e31a41cdfd29367d156df6a56b19b72fe5540';
+String _$databaseHash() => r'b43f5a38382427710fbceefeb419518e859b35ea';
 
 /// Dio HTTP client provider
 
@@ -97,7 +97,7 @@ final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
   }
 }
 
-String _$dioHash() => r'ea6954ef9978f892fcec5c0626bc3fce021c3469';
+String _$dioHash() => r'064a5d6d0c5678cd1dbaa9bb231f4f8752844f05';
 
 /// Sync Service provider
 
@@ -143,4 +143,4 @@ final class SyncServiceProvider
   }
 }
 
-String _$syncServiceHash() => r'24cdeaa5a3e75e36c058f8f65af034974c1be4a3';
+String _$syncServiceHash() => r'15ed483339cd02899979a860b74d483013165e9a';

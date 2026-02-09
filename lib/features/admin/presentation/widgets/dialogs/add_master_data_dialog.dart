@@ -18,11 +18,13 @@ class _AddMasterDataDialogState extends ConsumerState<AddMasterDataDialog> {
   final _formKey = GlobalKey<FormState>();
   final _codeController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _productTypeController = TextEditingController();
 
   @override
   void dispose() {
     _codeController.dispose();
     _descriptionController.dispose();
+    _productTypeController.dispose();
     super.dispose();
   }
 
@@ -112,6 +114,32 @@ class _AddMasterDataDialogState extends ConsumerState<AddMasterDataDialog> {
               ),
               const SizedBox(height: 16),
 
+              // Product Type (only for product-codes)
+              if (widget.category == 'product-codes') ...[
+                TextFormField(
+                  controller: _productTypeController,
+                  style: const TextStyle(color: AppColors.textMain),
+                  decoration: InputDecoration(
+                    labelText: 'Ürün Türü',
+                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    prefixIcon: const Icon(LucideIcons.package, size: 18),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Bu alan gerekli';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+
               // Description
               TextFormField(
                 controller: _descriptionController,
@@ -185,10 +213,12 @@ class _AddMasterDataDialogState extends ConsumerState<AddMasterDataDialog> {
         return 'Ret Kodu';
       case 'zones':
         return 'Bölge Kodu';
-      case 'locations':
-        return 'Konum Kodu';
-      case 'foundries':
-        return 'Döküm Kodu';
+      case 'product-codes':
+        return 'Ürün Kodu';
+      case 'operation-names':
+        return 'Operasyon Adı';
+      case 'rework-operations':
+        return 'Rework İşlemi';
       default:
         return 'Kod';
     }
@@ -203,6 +233,11 @@ class _AddMasterDataDialogState extends ConsumerState<AddMasterDataDialog> {
             code: _codeController.text,
             description: _descriptionController.text.isNotEmpty
                 ? _descriptionController.text
+                : null,
+            productType:
+                widget.category == 'product-codes' &&
+                    _productTypeController.text.isNotEmpty
+                ? _productTypeController.text
                 : null,
           );
 

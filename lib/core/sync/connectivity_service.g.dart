@@ -55,7 +55,7 @@ final class ConnectivityServiceProvider
 }
 
 String _$connectivityServiceHash() =>
-    r'c4b690d05294886321082a760a6a959a9d25691f';
+    r'1be9839fa1d8b9b9e3f8665949ad4538a57a92c9';
 
 /// Connectivity durumunu dinleyen provider
 
@@ -99,4 +99,4 @@ final class ConnectivityStateProvider
   }
 }
 
-String _$connectivityStateHash() => r'695ea22a4822b929cf76dc4bcfd24a48b8234a8d';
+String _$connectivityStateHash() => r'ed43bba8106cbb7880c9c7487ba276d014e332b0';

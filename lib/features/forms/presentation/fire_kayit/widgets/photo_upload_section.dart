@@ -99,7 +99,7 @@ class PhotoUploadSection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: AppColors.primary, size: 20),
+              Icon(icon, color: Colors.white, size: 20),
               const SizedBox(width: 8),
               Text(
                 label,

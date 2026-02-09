@@ -9,7 +9,8 @@ import '../../chat/presentation/shift_notes_screen.dart';
 import '../../history/presentation/history_screen.dart';
 import '../../forms/presentation/forms_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
-import 'scrap_analysis_tab.dart';
+import 'scrap_analysis/analysis_screen.dart';
+import 'fire_search_tab.dart';
 import 'tabs/report_summary_tab.dart';
 import 'tabs/report_edit_tab.dart';
 import 'widgets/user_management_tab.dart';
@@ -30,7 +31,7 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -166,6 +167,10 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
                               text: 'Fire Analizi',
                             ),
                             Tab(
+                              icon: Icon(LucideIcons.search),
+                              text: 'Fire Ara',
+                            ),
+                            Tab(
                               icon: Icon(LucideIcons.users),
                               text: 'Kullanıcı Yönetimi',
                             ),
@@ -184,7 +189,8 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
                           children: const [
                             ReportSummaryTab(),
                             ReportEditTab(),
-                            ScrapAnalysisTab(),
+                            AnalysisScreen(),
+                            FireSearchTab(),
                             UserManagementTab(),
                             MasterDataTab(),
                           ],

@@ -131,9 +131,12 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isLogout
+    final iconColor = isLogout
         ? AppColors.error
-        : (isSelected ? AppColors.primary : AppColors.textSecondary);
+        : (isSelected ? Colors.white : AppColors.textSecondary);
+    final textColor = isLogout
+        ? AppColors.error
+        : (isSelected ? Colors.white : AppColors.textSecondary);
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -148,13 +151,13 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 26, color: color),
+            Icon(icon, size: 26, color: iconColor),
             const SizedBox(height: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 11,
-                color: color,
+                color: textColor,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
               textAlign: TextAlign.center,

@@ -29,7 +29,9 @@ class ProductStateRadio extends StatelessWidget {
               child: CustomRadioOption(
                 value: 'Ham',
                 groupValue: productState,
-                icon: Icons.radio_button_unchecked,
+                icon: productState == 'Ham'
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
                 onChanged: onChanged,
               ),
             ),
@@ -38,7 +40,9 @@ class ProductStateRadio extends StatelessWidget {
               child: CustomRadioOption(
                 value: 'İşlenmiş',
                 groupValue: productState,
-                icon: Icons.check_circle_outline,
+                icon: productState == 'İşlenmiş'
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
                 onChanged: onChanged,
               ),
             ),

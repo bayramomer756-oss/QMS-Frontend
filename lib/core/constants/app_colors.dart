@@ -23,7 +23,7 @@ class AppColors {
   static const Color glassRed = Color(0x1AD6001A); // %10 kırmızı overlay
 
   // Semantic Colors - Beyaz & Kırmızı Tonları
-  static const Color success = Color(0xFFFFFFFF); // Beyaz (Onay/Başarı)
+  static const Color success = Color(0xFF4CAF50); // Yeşil (Onay/Başarı)
   static const Color error = Color(0xFFD6001A); // Frenbu Kırmızı (Hata/Hurda)
   static const Color warning = Color(0xFFE57373); // Açık kırmızı (Uyarı)
   static const Color info = Color(0xFFF5F5F5); // Açık beyaz (Bilgi)

@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:dio/dio.dart';
 import '../database/database.dart';
 import '../sync/sync_service.dart';
+import '../utils/app_logger.dart';
 
 part 'app_providers.g.dart';
 
@@ -16,9 +17,15 @@ AppDatabase database(Ref ref) {
 /// Dio HTTP client provider
 @riverpod
 Dio dio(Ref ref) {
+  // Use environment variable or default to localhost for development
+  const apiUrl = String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://localhost:5000', // Local development default
+  );
+
   final dio = Dio(
     BaseOptions(
-      baseUrl: 'http://your-api-url.com', // TODO: Update with actual API URL
+      baseUrl: apiUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       headers: {'Content-Type': 'application/json'},
@@ -30,7 +37,7 @@ Dio dio(Ref ref) {
     LogInterceptor(
       requestBody: true,
       responseBody: true,
-      logPrint: (obj) => print('[DIO] $obj'),
+      logPrint: (obj) => AppLogger.network('$obj', tag: 'HTTP'),
     ),
   );
 

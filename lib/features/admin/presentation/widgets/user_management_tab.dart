@@ -184,6 +184,7 @@ class _UserManagementTabState extends ConsumerState<UserManagementTab> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Row(
                   children: [
@@ -218,35 +219,29 @@ class _UserManagementTabState extends ConsumerState<UserManagementTab> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Row(
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 4,
                   children: [
-                    Icon(
-                      LucideIcons.atSign,
-                      size: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      user.kullaniciAdi,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
+                    _buildInfoItem(LucideIcons.atSign, user.kullaniciAdi),
+                    if (user.telefon?.isNotEmpty == true)
+                      _buildInfoItem(LucideIcons.phone, user.telefon!),
+                    if (user.dogumTarihi != null)
+                      _buildInfoItem(
+                        LucideIcons.calendar,
+                        DateFormat('dd.MM.yyyy').format(user.dogumTarihi!),
+                        tooltip: 'Doğum Tarihi',
                       ),
-                    ),
-                    const SizedBox(width: 20),
-                    Icon(
-                      LucideIcons.calendar,
-                      size: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      DateFormat('dd.MM.yyyy').format(user.kayitTarihi),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
+                    if (user.yakiniTelefon?.isNotEmpty == true)
+                      _buildInfoItem(
+                        LucideIcons.contact,
+                        'Yakın: ${user.yakiniTelefon!}',
+                        color: AppColors.error,
                       ),
+                    _buildInfoItem(
+                      LucideIcons.clock,
+                      'Kayıt: ${DateFormat('dd.MM.yyyy').format(user.kayitTarihi)}',
                     ),
                   ],
                 ),
@@ -286,10 +281,10 @@ class _UserManagementTabState extends ConsumerState<UserManagementTab> {
     switch (permission) {
       case 'Admin':
         return AppColors.primary;
-      case 'Inspector':
+      case 'Manager':
         return AppColors.duzceGreen;
-      case 'QualityEngineer':
-        return const Color(0xFF4CAF50);
+      case 'User':
+        return AppColors.textSecondary;
       default:
         return AppColors.textSecondary;
     }
@@ -298,16 +293,41 @@ class _UserManagementTabState extends ConsumerState<UserManagementTab> {
   String _getPermissionLabel(String permission) {
     switch (permission) {
       case 'Admin':
-        return 'Yönetici';
-      case 'Inspector':
-        return 'Kontrolör';
-      case 'QualityEngineer':
-        return 'Kalite Mühendisi';
-      case 'Operator':
-        return 'Operatör';
+        return 'Yönetici (Admin)';
+      case 'Manager':
+        return 'Yönetici (Manager)';
+      case 'User':
+        return 'Kullanıcı';
       default:
         return permission;
     }
+  }
+
+  Widget _buildInfoItem(
+    IconData icon,
+    String text, {
+    Color? color,
+    String? tooltip,
+  }) {
+    final content = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color ?? AppColors.textSecondary),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            color: color ?? AppColors.textSecondary,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+
+    if (tooltip != null) {
+      return Tooltip(message: tooltip, child: content);
+    }
+    return content;
   }
 
   void _showAddUserDialog(BuildContext context) {

@@ -5,19 +5,22 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/sidebar_navigation.dart';
 import '../../../../core/widgets/forms/form_section_title.dart';
+import '../../../../core/widgets/forms/date_time_form_field.dart';
+import '../../../../core/widgets/forms/product_info_card.dart';
+import '../../../../core/widgets/forms/custom_text_field.dart';
+import '../../../../core/widgets/forms/custom_dropdown.dart';
+import '../../../../core/providers/user_permission_provider.dart';
 import '../../../auth/presentation/login_screen.dart';
 import '../../../chat/presentation/shift_notes_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/fire_kayit_providers.dart';
 
 // Section Widgets
-import 'widgets/product_info_section.dart';
 import 'widgets/machine_zone_selection.dart';
-import 'widgets/product_state_radio.dart';
 import 'widgets/error_details_section.dart';
-import 'widgets/operator_description_section.dart';
+import 'widgets/operator_autocomplete.dart';
 import 'widgets/photo_upload_section.dart';
-import 'widgets/submit_button.dart';
+import 'widgets/quantity_input.dart';
 
 class FireKayitScreen extends ConsumerStatefulWidget {
   final DateTime? initialDate;
@@ -27,14 +30,26 @@ class FireKayitScreen extends ConsumerStatefulWidget {
   ConsumerState<FireKayitScreen> createState() => _FireKayitScreenState();
 }
 
+// Entry model for batch recording
+class FireEntry {
+  final String errorReason;
+  final int quantity;
+  final String? description;
+  final XFile? image;
+
+  FireEntry({
+    required this.errorReason,
+    required this.quantity,
+    this.description,
+    this.image,
+  });
+}
+
 class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
   // Form Controllers
   final _productCodeController = TextEditingController();
-  final _productNameController = TextEditingController();
-  final _productTypeController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
   final _aciklamaController = TextEditingController();
-  final _operatorNameController = TextEditingController();
 
   // Şarj No Controllers
   final _sarjDayController = TextEditingController();
@@ -43,11 +58,20 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
   String _sarjFoundry = 'F';
 
   // State Variables
-  String? _selectedMachine;
+  DateTime _selectedDateTime = DateTime.now();
+  String? _productName;
+  String? _productType;
+  String? _selectedProcessedMachine;
+  String? _selectedDetectedMachine;
   String? _selectedZone;
+  String? _selectedOperation;
   String _productState = 'İşlenmiş';
   String? _selectedErrorReason;
+  String? _selectedOperator;
   XFile? _selectedImage;
+
+  // Multi-entry list
+  final List<FireEntry> _entries = [];
 
   // Options
   final List<String> _foundryOptions = ['F', 'A'];
@@ -81,6 +105,13 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
     'Montaj Uyumsuzluğu',
     'Diğer',
   ];
+  final List<String> _operationOptions = [
+    'İşleme',
+    'Montaj',
+    'Kalite Kontrol',
+    'Paketleme',
+    'Taşıma',
+  ];
 
   @override
   void initState() {
@@ -99,11 +130,8 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
   @override
   void dispose() {
     _productCodeController.dispose();
-    _productNameController.dispose();
-    _productTypeController.dispose();
     _quantityController.dispose();
     _aciklamaController.dispose();
-    _operatorNameController.dispose();
     _sarjDayController.dispose();
     _sarjLineController.dispose();
     super.dispose();
@@ -125,100 +153,60 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
     return '$_sarjYear$_sarjFoundry$dayStr$lineStr';
   }
 
-  Future<void> _saveEntry() async {
+  void _addEntry() {
     // Validation
-    if (_productCodeController.text.isEmpty ||
-        _productNameController.text.isEmpty ||
-        _productTypeController.text.isEmpty ||
-        _selectedMachine == null ||
-        _selectedZone == null ||
-        _operatorNameController.text.isEmpty ||
-        _selectedErrorReason == null) {
+    if (_selectedErrorReason == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Lütfen gerekli alanları doldurun'),
+          content: Text('Lütfen hata nedeni seçin'),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
-    try {
-      // Show Loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    final quantity = int.tryParse(_quantityController.text) ?? 0;
+    if (quantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Geçerli bir adet girin'),
+          backgroundColor: Colors.orange,
+        ),
       );
-
-      // Map UI values to IDs
-      final tezgahId = _machineOptions.indexOf(_selectedMachine!) + 1;
-      final bolgeId = _zoneOptions.indexOf(_selectedZone!) + 1;
-      final retKoduId = _errorReasons.indexOf(_selectedErrorReason!) + 1;
-
-      // Prepare DTO Map
-      final data = {
-        'vardiyaId': 1,
-        'urunKodu': _productCodeController.text,
-        'sarjNo': _batchNo,
-        'tezgahId': tezgahId,
-        'operasyonId': 1,
-        'bolgeId': bolgeId,
-        'retKoduId': retKoduId,
-        'operatorAdi': _operatorNameController.text,
-        'aciklama': _aciklamaController.text,
-      };
-
-      // Create Form
-      final id = await ref.read(createFireKayitFormUseCaseProvider).call(data);
-
-      // Upload Photo (if exists)
-      if (_selectedImage != null) {
-        await ref
-            .read(fireKayitRepositoryProvider)
-            .uploadPhoto(id, File(_selectedImage!.path));
-      }
-
-      // Hide Loading
-      if (mounted) Navigator.of(context).pop();
-
-      // Success Message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Fire kaydı başarıyla oluşturuldu'),
-            backgroundColor: AppColors.duzceGreen,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-
-      // Reset Form
-      setState(() {
-        _productCodeController.clear();
-        _productNameController.clear();
-        _productTypeController.clear();
-        _selectedMachine = null;
-        _selectedZone = null;
-        _quantityController.text = '1';
-        _selectedErrorReason = null;
-        _aciklamaController.clear();
-        _selectedImage = null;
-      });
-    } catch (e) {
-      // Hide Loading
-      if (mounted) Navigator.of(context).pop();
-
-      // Error Message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Hata: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      return;
     }
+
+    setState(() {
+      _entries.add(
+        FireEntry(
+          errorReason: _selectedErrorReason!,
+          quantity: quantity,
+          description: _aciklamaController.text.isNotEmpty
+              ? _aciklamaController.text
+              : null,
+          image: _selectedImage,
+        ),
+      );
+      // Clear entry-specific fields
+      _quantityController.text = '1';
+      _selectedErrorReason = null;
+      _aciklamaController.clear();
+      _selectedImage = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Kayıt eklendi'),
+        backgroundColor: AppColors.duzceGreen,
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _removeEntry(int index) {
+    setState(() {
+      _entries.removeAt(index);
+    });
   }
 
   @override
@@ -260,8 +248,8 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
                     Navigator.of(context).pop();
                   }
                 },
-                operatorInitial: _operatorNameController.text.isNotEmpty
-                    ? _operatorNameController.text[0].toUpperCase()
+                operatorInitial: _selectedOperator?.isNotEmpty == true
+                    ? _selectedOperator![0].toUpperCase()
                     : 'O',
                 onLogout: () => Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -360,65 +348,134 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
             icon: Icons.inventory_2_outlined,
           ),
           const SizedBox(height: 16),
-          ProductInfoSection(
-            productCodeController: _productCodeController,
-            productNameController: _productNameController,
-            productTypeController: _productTypeController,
-            quantityController: _quantityController,
-            onQuantityDecrement: () {
-              int val = int.tryParse(_quantityController.text) ?? 1;
-              _quantityController.text = (val - 1).clamp(1, 9999).toString();
+          // Date and Time Field
+          DateTimeFormField(
+            initialDateTime: _selectedDateTime,
+            onChanged: (newDateTime) {
+              setState(() => _selectedDateTime = newDateTime);
             },
-            onQuantityIncrement: () {
-              int val = int.tryParse(_quantityController.text) ?? 1;
-              _quantityController.text = (val + 1).clamp(1, 9999).toString();
+            isEnabled: ref
+                .watch(userPermissionProvider.notifier)
+                .canEditForms(),
+            label: 'Tarih ve Saat',
+          ),
+          const SizedBox(height: 16),
+
+          // Product Code (full width now)
+          ProductInfoCard(
+            productCodeController: _productCodeController,
+            productName: _productName,
+            productType: _productType,
+            onProductCodeChanged: (code) {
+              setState(() {
+                if (code.isEmpty) {
+                  _productName = null;
+                  _productType = null;
+                }
+              });
+            },
+            onProductSelected: (product) {
+              setState(() {
+                _productName = product.urunAdi;
+                _productType = product.urunTuru;
+              });
             },
           ),
           const SizedBox(height: 16),
 
-          // Machine & Zone Selection
+          // Machine & Zone & Operation & Product State (2 rows)
           MachineZoneSelection(
-            selectedMachine: _selectedMachine,
+            selectedProcessedMachine: _selectedProcessedMachine,
+            selectedDetectedMachine: _selectedDetectedMachine,
             selectedZone: _selectedZone,
+            selectedOperation: _selectedOperation,
             machineOptions: _machineOptions,
             zoneOptions: _zoneOptions,
-            onMachineChanged: (val) => setState(() => _selectedMachine = val),
-            onZoneChanged: (val) => setState(() => _selectedZone = val),
-          ),
-          const SizedBox(height: 16),
-
-          // Product State Radio
-          ProductStateRadio(
+            operationOptions: _operationOptions,
             productState: _productState,
-            onChanged: (val) => setState(() => _productState = val!),
-          ),
-          const SizedBox(height: 24),
-
-          // Error Details Section
-          const FormSectionTitle(
-            title: 'Hata Detayları',
-            icon: Icons.warning_amber_outlined,
-          ),
-          const SizedBox(height: 16),
-          ErrorDetailsSection(
-            sarjDayController: _sarjDayController,
-            sarjLineController: _sarjLineController,
-            sarjYear: _sarjYear,
-            sarjFoundry: _sarjFoundry,
-            foundryOptions: _foundryOptions,
-            selectedErrorReason: _selectedErrorReason,
-            errorReasons: _errorReasons,
-            onYearChanged: (val) => setState(() => _sarjYear = val),
-            onFoundryChanged: (val) => setState(() => _sarjFoundry = val),
-            onErrorReasonChanged: (val) =>
-                setState(() => _selectedErrorReason = val),
+            onProcessedMachineChanged: (val) =>
+                setState(() => _selectedProcessedMachine = val),
+            onDetectedMachineChanged: (val) =>
+                setState(() => _selectedDetectedMachine = val),
+            onZoneChanged: (val) => setState(() => _selectedZone = val),
+            onOperationChanged: (val) =>
+                setState(() => _selectedOperation = val),
+            onProductStateChanged: (val) =>
+                setState(() => _productState = val!),
           ),
           const SizedBox(height: 16),
 
-          // Operator & Description
-          OperatorDescriptionSection(
-            operatorNameController: _operatorNameController,
-            aciklamaController: _aciklamaController,
+          // Şarj No + Adet (side by side)
+          Row(
+            children: [
+              // Şarj No (60%)
+              Expanded(
+                flex: 6,
+                child: SarjNoSection(
+                  sarjDayController: _sarjDayController,
+                  sarjLineController: _sarjLineController,
+                  sarjYear: _sarjYear,
+                  sarjFoundry: _sarjFoundry,
+                  foundryOptions: _foundryOptions,
+                  onYearChanged: (val) => setState(() => _sarjYear = val),
+                  onFoundryChanged: (val) => setState(() => _sarjFoundry = val),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Adet (40%) with +/- buttons
+              Expanded(
+                flex: 4,
+                child: QuantityInput(
+                  controller: _quantityController,
+                  onIncrement: () {
+                    final current = int.tryParse(_quantityController.text) ?? 1;
+                    _quantityController.text = (current + 1).toString();
+                  },
+                  onDecrement: () {
+                    final current = int.tryParse(_quantityController.text) ?? 1;
+                    if (current > 1) {
+                      _quantityController.text = (current - 1).toString();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Operatör + Hata Kodu (side by side)
+          Row(
+            children: [
+              // Operatör (50%)
+              Expanded(
+                child: OperatorAutocomplete(
+                  selectedOperator: _selectedOperator,
+                  onOperatorChanged: (val) =>
+                      setState(() => _selectedOperator = val),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Hata Kodu (50%)
+              Expanded(
+                child: CustomDropdown(
+                  label: 'Hata Nedeni',
+                  value: _selectedErrorReason,
+                  items: _errorReasons,
+                  icon: Icons.error_outline,
+                  onChanged: (val) =>
+                      setState(() => _selectedErrorReason = val),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Açıklama
+          CustomTextField(
+            label: 'Açıklama (İsteğe Bağlı)',
+            controller: _aciklamaController,
+            icon: Icons.description_outlined,
+            maxLines: 2,
           ),
           const SizedBox(height: 24),
 
@@ -433,12 +490,263 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
             onPickImage: _pickImage,
             onRemoveImage: () => setState(() => _selectedImage = null),
           ),
+          const SizedBox(height: 24),
+
+          // Add Entry Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _addEntry,
+              icon: const Icon(Icons.add_circle_outline, size: 20),
+              label: const Text('KAYIT EKLE'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.almanyaBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+
+          // Entry List Section
+          if (_entries.isNotEmpty) ...[
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                const Icon(
+                  Icons.list_alt,
+                  color: AppColors.textSecondary,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Eklenen Kayıtlar (${_entries.length})',
+                  style: const TextStyle(
+                    color: AppColors.textMain,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ..._entries.asMap().entries.map((entry) {
+              final index = entry.key;
+              final fireEntry = entry.value;
+              return _buildEntryCard(fireEntry, index);
+            }),
+          ],
+
           const SizedBox(height: 32),
 
-          // Submit Button
-          SubmitButton(onPressed: _saveEntry),
+          // Submit Button (only enabled if entries exist)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _entries.isNotEmpty ? _submitAllEntries : null,
+              icon: const Icon(Icons.save, size: 20),
+              label: Text(
+                _entries.isNotEmpty
+                    ? 'TÜMÜNÜ KAYDET (${_entries.length})'
+                    : 'KAYIT EKLE',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _entries.isNotEmpty
+                    ? AppColors.primary
+                    : AppColors.border,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildEntryCard(FireEntry entry, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${entry.errorReason} - ${entry.quantity} adet',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (entry.description != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    entry.description!,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+                if (entry.image != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.image,
+                        color: AppColors.primary,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Fotoğraf eklendi',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _removeEntry(index),
+            icon: const Icon(
+              Icons.delete_outline,
+              color: AppColors.error,
+              size: 20,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitAllEntries() async {
+    if (_entries.isEmpty) return;
+
+    // Validate common fields
+    if (_productCodeController.text.isEmpty ||
+        _selectedProcessedMachine == null ||
+        _selectedZone == null ||
+        _selectedOperator == null ||
+        _selectedOperator!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Lütfen ürün, tezgah, bölge ve operatör bilgilerini doldurun',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show Loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Map UI values to IDs
+      final tezgahId = _machineOptions.indexOf(_selectedProcessedMachine!) + 1;
+      final bolgeId = _zoneOptions.indexOf(_selectedZone!) + 1;
+      final operasyonId = _selectedOperation != null
+          ? _operationOptions.indexOf(_selectedOperation!) + 1
+          : 1;
+
+      // Submit each entry
+      for (final entry in _entries) {
+        final retKoduId = _errorReasons.indexOf(entry.errorReason) + 1;
+
+        final data = {
+          'vardiyaId': 1,
+          'urunKodu': _productCodeController.text,
+          'sarjNo': _batchNo,
+          'tezgahId': tezgahId,
+          'operasyonId': operasyonId,
+          'bolgeId': bolgeId,
+          'retKoduId': retKoduId,
+          'operatorAdi': _selectedOperator!,
+          'aciklama': entry.description ?? '',
+          'tespitEdilenTezgah': _selectedDetectedMachine, // Additional field
+        };
+
+        final id = await ref
+            .read(createFireKayitFormUseCaseProvider)
+            .call(data);
+
+        // Upload photo if exists for this entry
+        if (entry.image != null) {
+          await ref
+              .read(fireKayitRepositoryProvider)
+              .uploadPhoto(id, File(entry.image!.path));
+        }
+      }
+
+      // Hide Loading
+      if (mounted) Navigator.of(context).pop();
+
+      // Success Message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${_entries.length} kayıt başarıyla oluşturuldu'),
+            backgroundColor: AppColors.duzceGreen,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Reset Form
+      setState(() {
+        _entries.clear();
+        _productCodeController.clear();
+        _productName = null;
+        _productType = null;
+        _selectedProcessedMachine = null;
+        _selectedDetectedMachine = null;
+        _selectedZone = null;
+        _selectedOperation = null;
+        _quantityController.text = '1';
+        _selectedErrorReason = null;
+        _aciklamaController.clear();
+        _selectedOperator = null;
+        _selectedImage = null;
+      });
+    } catch (e) {
+      // Hide Loading
+      if (mounted) Navigator.of(context).pop();
+
+      // Error Message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

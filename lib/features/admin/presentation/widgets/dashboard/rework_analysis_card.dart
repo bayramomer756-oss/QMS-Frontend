@@ -20,7 +20,7 @@ class ReworkAnalysisCard extends StatelessWidget {
     ];
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -96,28 +96,7 @@ class ReworkAnalysisCard extends StatelessWidget {
                       style: const TextStyle(color: AppColors.textMain),
                     ),
                   ),
-                  Expanded(
-                    flex: 7,
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceLight,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        Container(
-                          height: 8,
-                          width: 20.0 * (e['qty'] as int),
-                          decoration: BoxDecoration(
-                            color: AppColors.reworkOrange,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const Spacer(),
                   const SizedBox(width: 8),
                   Text(
                     '${e['qty']}',

@@ -92,44 +92,27 @@ class MasterDataNotifier extends Notifier<List<MasterDataItem>> {
         description: 'D Bölgesi',
       ),
 
-      // Locations
-      MasterDataItem(
-        id: 17,
-        category: 'locations',
-        code: 'R1',
-        description: 'Raf 1',
-      ),
-      MasterDataItem(
-        id: 18,
-        category: 'locations',
-        code: 'R2',
-        description: 'Raf 2',
-      ),
-      MasterDataItem(
-        id: 19,
-        category: 'locations',
-        code: 'DEPO',
-        description: 'Ana Depo',
-      ),
-
       // Product Codes (NEW)
       MasterDataItem(
         id: 20,
         category: 'product-codes',
         code: 'P001',
         description: 'Fren Diski - Ağır Vasıta',
+        productType: 'Fren Diski',
       ),
       MasterDataItem(
         id: 21,
         category: 'product-codes',
         code: 'P002',
         description: 'Fren Kampanası - Otobüs',
+        productType: 'Fren Kampanası',
       ),
       MasterDataItem(
         id: 22,
         category: 'product-codes',
         code: 'P003',
         description: 'Fren Balatası - Kamyon',
+        productType: 'Fren Balatası',
       ),
 
       // Operation Names (NEW)
@@ -194,6 +177,7 @@ class MasterDataNotifier extends Notifier<List<MasterDataItem>> {
     required String category,
     required String code,
     String? description,
+    String? productType,
   }) {
     final nextId = state.isEmpty
         ? 1
@@ -203,16 +187,24 @@ class MasterDataNotifier extends Notifier<List<MasterDataItem>> {
       category: category,
       code: code,
       description: description,
+      productType: productType,
     );
     state = [...state, newItem];
   }
 
-  void updateItem(int id, {String? code, String? description, bool? isActive}) {
+  void updateItem(
+    int id, {
+    String? code,
+    String? description,
+    String? productType,
+    bool? isActive,
+  }) {
     state = state.map((item) {
       if (item.id == id) {
         return item.copyWith(
           code: code,
           description: description,
+          productType: productType,
           isActive: isActive,
         );
       }
@@ -262,13 +254,12 @@ final filteredMasterDataProvider = Provider<List<MasterDataItem>>((ref) {
   return allData.where((item) => item.category == category).toList();
 });
 
-// Categories (UPDATED: removed foundries, added product-codes, operation-names, rework-operations)
+// Categories (UPDATED: removed foundries and locations, added product-codes, operation-names, rework-operations)
 const masterDataCategories = {
   'machines': {'label': 'Tezgahlar', 'icon': 'settings'},
   'operators': {'label': 'Operatörler', 'icon': 'user'},
   'reject-codes': {'label': 'Ret Kodları', 'icon': 'xCircle'},
   'zones': {'label': 'Bölgeler', 'icon': 'mapPin'},
-  'locations': {'label': 'Konumlar', 'icon': 'package'},
   'product-codes': {'label': 'Ürün Kodları', 'icon': 'box'},
   'operation-names': {'label': 'Operasyon Adları', 'icon': 'tool'},
   'rework-operations': {'label': 'Rework İşlemleri', 'icon': 'rotateC cw'},

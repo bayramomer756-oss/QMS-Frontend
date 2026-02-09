@@ -15,38 +15,31 @@ class UserManagementNotifier extends Notifier<List<User>> {
         personelId: null,
         personelAdi: 'Admin User',
         kayitTarihi: DateTime(2024, 1, 15),
+        telefon: '5551112233',
+        dogumTarihi: DateTime(1985, 5, 20),
+        yakiniTelefon: '5559998877',
       ),
       User(
         id: 2,
-        kullaniciAdi: 'furkan.yilmaz',
-        hesapSeviyesi: 'Inspector',
+        kullaniciAdi: 'yonetici',
+        hesapSeviyesi: 'Manager',
         personelId: 101,
-        personelAdi: 'Furkan Yılmaz',
+        personelAdi: 'Ahmet Yılmaz',
         kayitTarihi: DateTime(2024, 3, 20),
+        telefon: '5552223344',
+        dogumTarihi: DateTime(1990, 8, 15),
+        yakiniTelefon: '5558887766',
       ),
       User(
         id: 3,
-        kullaniciAdi: 'ahmet.demir',
-        hesapSeviyesi: 'Operator',
+        kullaniciAdi: 'kullanici',
+        hesapSeviyesi: 'User',
         personelId: 102,
-        personelAdi: 'Ahmet Demir',
+        personelAdi: 'Mehmet Demir',
         kayitTarihi: DateTime(2024, 5, 10),
-      ),
-      User(
-        id: 4,
-        kullaniciAdi: 'mehmet.yilmaz',
-        hesapSeviyesi: 'QualityEngineer',
-        personelId: 103,
-        personelAdi: 'Mehmet Yılmaz',
-        kayitTarihi: DateTime(2024, 6, 5),
-      ),
-      User(
-        id: 5,
-        kullaniciAdi: 'ali.veli',
-        hesapSeviyesi: 'Operator',
-        personelId: 104,
-        personelAdi: 'Ali Veli',
-        kayitTarihi: DateTime(2024, 7, 12),
+        telefon: '5553334455',
+        dogumTarihi: DateTime(1995, 2, 28),
+        yakiniTelefon: '5557776655',
       ),
     ];
   }
@@ -56,6 +49,9 @@ class UserManagementNotifier extends Notifier<List<User>> {
     required String hesapSeviyesi,
     int? personelId,
     String? personelAdi,
+    String? telefon,
+    DateTime? dogumTarihi,
+    String? yakiniTelefon,
   }) {
     final newUser = User(
       id: state.isEmpty
@@ -66,20 +62,29 @@ class UserManagementNotifier extends Notifier<List<User>> {
       personelId: personelId,
       personelAdi: personelAdi,
       kayitTarihi: DateTime.now(),
+      telefon: telefon,
+      dogumTarihi: dogumTarihi,
+      yakiniTelefon: yakiniTelefon,
     );
     state = [...state, newUser];
   }
 
-  void updateUser(int id, {String? hesapSeviyesi, String? personelAdi}) {
+  void updateUser(
+    int id, {
+    String? hesapSeviyesi,
+    String? personelAdi,
+    String? telefon,
+    DateTime? dogumTarihi,
+    String? yakiniTelefon,
+  }) {
     state = state.map((user) {
       if (user.id == id) {
-        return User(
-          id: user.id,
-          kullaniciAdi: user.kullaniciAdi,
-          hesapSeviyesi: hesapSeviyesi ?? user.hesapSeviyesi,
-          personelId: user.personelId,
-          personelAdi: personelAdi ?? user.personelAdi,
-          kayitTarihi: user.kayitTarihi,
+        return user.copyWith(
+          hesapSeviyesi: hesapSeviyesi,
+          personelAdi: personelAdi,
+          telefon: telefon,
+          dogumTarihi: dogumTarihi,
+          yakiniTelefon: yakiniTelefon,
         );
       }
       return user;
@@ -103,4 +108,4 @@ final userManagementProvider =
     });
 
 // Permission levels
-final permissionLevels = ['Admin', 'Inspector', 'Operator', 'QualityEngineer'];
+final permissionLevels = ['Admin', 'Manager', 'User'];

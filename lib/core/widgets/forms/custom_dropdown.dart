@@ -40,7 +40,7 @@ class CustomDropdown extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.primary, size: 18),
+              Icon(icon, color: Colors.white, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: DropdownButtonHideUnderline(
@@ -60,7 +60,7 @@ class CustomDropdown extends StatelessWidget {
                     ),
                     icon: const Icon(
                       LucideIcons.chevronDown,
-                      color: AppColors.textSecondary,
+                      color: Colors.white,
                       size: 18,
                     ),
                     items: items

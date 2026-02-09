@@ -55,153 +55,137 @@ class _PersonnelCard extends StatelessWidget {
     final String name = data['name'];
     final int total = data['total'];
     final int defects = data['defects'];
-    final int efficiency = data['efficiency'];
+    // final int efficiency = data['efficiency']; // Kaldırıldı
 
-    // Renk skalası
-    final Color efficiencyColor = efficiency >= 95
-        ? AppColors.duzceGreen
-        : efficiency >= 90
-        ? AppColors.reworkOrange
-        : AppColors.error;
+    // Renk skalası kaldırıldı (Verimlilik gösterilmediği için)
+
+    // Uygun Üretim = Toplam - Hata
+    final int okCount = total - defects;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.glassBorder, // Subtle border
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.glassBorder),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // İsim ve Avatar
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppColors.surfaceLight,
-                    child: Text(
-                      name.substring(0, 1),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          color: AppColors.textMain,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '$total Üretim',
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+          // Avatar
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.surfaceLight,
+            child: Text(
+              name.substring(0, 1),
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
               ),
-
-              // Verimlilik Rozeti
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: efficiencyColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: efficiencyColor.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      LucideIcons.activity,
-                      size: 14,
-                      color: efficiencyColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '%$efficiency',
-                      style: TextStyle(
-                        color: efficiencyColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 16),
-
-          // İstatistikler (Hata & Bar)
-          Row(
-            children: [
-              // Hata Sayısı
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
+          const SizedBox(width: 16),
+          // İsim ve Detaylar
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: AppColors.textMain,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
-                child: Row(
+                const SizedBox(height: 6),
+                Row(
                   children: [
-                    const Icon(
-                      LucideIcons.alertCircle,
-                      size: 12,
-                      color: AppColors.error,
+                    // Uygun Adet Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.duzceGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: AppColors.duzceGreen.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            LucideIcons.checkCircle,
+                            size: 10,
+                            color: AppColors.duzceGreen,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$okCount Uygun',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$defects Hata',
-                      style: const TextStyle(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
+                    const SizedBox(width: 8),
+                    // Ret Adet Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: AppColors.error.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            LucideIcons.xCircle,
+                            size: 10,
+                            color: AppColors.error,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$defects Ret',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-
-              // Progress Bar
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: efficiency / 100,
-                    backgroundColor: AppColors.surfaceLight,
-                    valueColor: AlwaysStoppedAnimation<Color>(efficiencyColor),
-                    minHeight: 8,
-                  ),
+              ],
+            ),
+          ),
+          // Toplam Üretim (Sağda Sade)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$total',
+                style: const TextStyle(
+                  color: AppColors.textMain,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
+              const Text(
+                'Toplam',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 10),
               ),
             ],
           ),

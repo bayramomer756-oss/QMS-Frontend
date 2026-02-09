@@ -71,7 +71,7 @@ class _MasterDataTabState extends ConsumerState<MasterDataTab> {
             ),
             child: const Row(
               children: [
-                Icon(LucideIcons.database, color: AppColors.primary, size: 24),
+                Icon(LucideIcons.database, color: Colors.white, size: 24),
                 SizedBox(width: 12),
                 Text(
                   'Kategoriler',
@@ -111,12 +111,11 @@ class _MasterDataTabState extends ConsumerState<MasterDataTab> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isSelected
-            ? AppColors.primary.withValues(alpha: 0.15)
-            : Colors.transparent,
+        color: isSelected ? AppColors.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected ? AppColors.primary : Colors.transparent,
+          width: 2,
         ),
       ),
       child: InkWell(
@@ -129,7 +128,7 @@ class _MasterDataTabState extends ConsumerState<MasterDataTab> {
             children: [
               Icon(
                 icon,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected ? Colors.white : AppColors.textSecondary,
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -137,7 +136,7 @@ class _MasterDataTabState extends ConsumerState<MasterDataTab> {
                 child: Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? AppColors.primary : AppColors.textMain,
+                    color: isSelected ? Colors.white : AppColors.textMain,
                     fontWeight: isSelected
                         ? FontWeight.bold
                         : FontWeight.normal,
@@ -148,7 +147,7 @@ class _MasterDataTabState extends ConsumerState<MasterDataTab> {
               if (isSelected)
                 const Icon(
                   LucideIcons.chevronRight,
-                  color: AppColors.primary,
+                  color: Colors.white,
                   size: 16,
                 ),
             ],
@@ -172,7 +171,7 @@ class _MasterDataTabState extends ConsumerState<MasterDataTab> {
         children: [
           Icon(
             _getIconForCategory(categoryInfo['icon']!),
-            color: AppColors.primary,
+            color: Colors.white,
             size: 28,
           ),
           const SizedBox(width: 12),
@@ -283,9 +282,7 @@ class _MasterDataTabState extends ConsumerState<MasterDataTab> {
                 _getIconForCategory(
                   masterDataCategories[item.category]!['icon']!,
                 ),
-                color: item.isActive
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+                color: Colors.white,
                 size: 24,
               ),
             ),

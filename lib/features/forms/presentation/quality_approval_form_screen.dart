@@ -4,11 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
+import '../../../core/widgets/forms/product_info_card.dart';
+import '../../../core/widgets/forms/date_time_form_field.dart';
+import '../../../core/providers/user_permission_provider.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
 
 class QualityApprovalFormScreen extends ConsumerStatefulWidget {
-  const QualityApprovalFormScreen({super.key});
+  final DateTime? initialDate;
+  const QualityApprovalFormScreen({super.key, this.initialDate});
 
   @override
   ConsumerState<QualityApprovalFormScreen> createState() =>
@@ -27,6 +31,9 @@ class _QualityApprovalFormScreenState
   final _descriptionController = TextEditingController();
 
   // Form State
+  DateTime _selectedDateTime = DateTime.now();
+  String? _productName; // Product display name
+  String? _productType; // Product display type
   String _complianceStatus = 'Uygun'; // Uygun / RET
   String? _rejectCode;
   final String _operatorName = 'Furkan Yılmaz';
@@ -186,30 +193,46 @@ class _QualityApprovalFormScreenState
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    _buildTextField(
-                                      label: 'Ürün Kodu',
-                                      controller: _productCodeController,
-                                      icon: LucideIcons.box,
+                                    // Date and Time Field
+                                    DateTimeFormField(
+                                      initialDateTime: _selectedDateTime,
+                                      onChanged: (newDateTime) {
+                                        setState(
+                                          () => _selectedDateTime = newDateTime,
+                                        );
+                                      },
+                                      isEnabled: ref
+                                          .watch(
+                                            userPermissionProvider.notifier,
+                                          )
+                                          .canEditForms(),
+                                      label: 'Tarih ve Saat',
                                     ),
                                     const SizedBox(height: 16),
-                                    _buildTextField(
-                                      label: 'Ürün Adı',
-                                      controller: _productNameController,
-                                      icon: LucideIcons.clipboardList,
-                                      enabled: false,
+
+                                    ProductInfoCard(
+                                      productCodeController:
+                                          _productCodeController,
+                                      productName: _productName,
+                                      productType: _productType,
+                                      onProductCodeChanged: (code) {
+                                        setState(() {
+                                          if (code.isEmpty) {
+                                            _productName = null;
+                                            _productType = null;
+                                          }
+                                        });
+                                      },
+                                      onProductSelected: (product) {
+                                        setState(() {
+                                          _productName = product.urunAdi;
+                                          _productType = product.urunTuru;
+                                        });
+                                      },
                                     ),
                                     const SizedBox(height: 16),
                                     Row(
                                       children: [
-                                        Expanded(
-                                          child: _buildTextField(
-                                            label: 'Ürün Türü',
-                                            controller: _productTypeController,
-                                            icon: LucideIcons.tag,
-                                            enabled: false,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
                                         Expanded(
                                           child: Row(
                                             children: [

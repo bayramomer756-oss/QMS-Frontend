@@ -36,53 +36,98 @@ class _ReportSummaryTabState extends State<ReportSummaryTab> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildFilterRow(),
-          const SizedBox(height: 32),
-
-          // 1. Kalite Onay
-          _buildSectionHeader('1. Kalite Onay Özeti', LucideIcons.checkCircle),
-          const QualityApprovalCard(),
           const SizedBox(height: 24),
 
-          // 2. Final Kontrol
-          _buildSectionHeader(
-            '2. Final Kontrol Özeti',
-            LucideIcons.packageCheck,
+          // Row 1: Kalite Onay & Final Kontrol
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSectionHeader(
+                      '1. Kalite Onay',
+                      LucideIcons.checkCircle,
+                    ),
+                    const QualityApprovalCard(),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSectionHeader(
+                      '2. Final Kontrol',
+                      LucideIcons.packageCheck,
+                    ),
+                    const FinalControlCard(),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const FinalControlCard(),
           const SizedBox(height: 24),
 
-          // 3. Rework Analizi
-          _buildSectionHeader('3. Rework Analizi', LucideIcons.refreshCw),
-          const ReworkAnalysisCard(),
-          const SizedBox(height: 24),
-
-          // 4. Fire Analizi
-          _buildSectionHeader(
-            '4. Fire Analizi (D2 / D3 / Frenbu)',
-            LucideIcons.flame,
+          // Row 2: Giriş Kalite & Fire Analizi
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSectionHeader(
+                      '3. Giriş Kalite',
+                      LucideIcons.clipboardCheck,
+                    ),
+                    const IncomingQualityCard(),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSectionHeader('4. Fire Analizi', LucideIcons.flame),
+                    const ScrapAnalysisCard(),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const ScrapAnalysisCard(),
           const SizedBox(height: 24),
 
-          // 5. Giriş Kalite
-          _buildSectionHeader(
-            '5. Giriş Kalite Özeti',
-            LucideIcons.clipboardCheck,
+          // Row 3: Rework Analizi & Numune Deneme
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSectionHeader(
+                      '5. Rework Analizi',
+                      LucideIcons.refreshCw,
+                    ),
+                    const ReworkAnalysisCard(),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSectionHeader('6. Numune/Deneme', LucideIcons.beaker),
+                    const SampleTestFormCard(),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const IncomingQualityCard(),
           const SizedBox(height: 24),
 
-          // 6. Personel Performansı
-          _buildSectionHeader('6. Personel Performansı', LucideIcons.users),
+          // Row 4: Personel Performansı (Tam Genişlik)
+          _buildSectionHeader('7. Personel Performansı', LucideIcons.users),
           const PersonnelPerformanceTable(),
-          const SizedBox(height: 24),
-
-          // 7. Numune/Deneme Formu (NEW)
-          _buildSectionHeader(
-            '7. Numune/Deneme Formu Sonuçları',
-            LucideIcons.beaker,
-          ),
-          const SampleTestFormCard(),
           const SizedBox(height: 40),
         ],
       ),
@@ -91,16 +136,16 @@ class _ReportSummaryTabState extends State<ReportSummaryTab> {
 
   Widget _buildSectionHeader(String title, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary, size: 24),
-          const SizedBox(width: 12),
+          Icon(icon, color: AppColors.primary, size: 20),
+          const SizedBox(width: 8),
           Text(
             title,
             style: const TextStyle(
               color: AppColors.textMain,
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -132,8 +177,18 @@ class _ReportSummaryTabState extends State<ReportSummaryTab> {
                   barrierColor: Colors.black.withValues(
                     alpha: 0.5,
                   ), // BLUR EFFECT
-                  builder: (context, child) =>
-                      Theme(data: ThemeData.dark(), child: child!),
+                  builder: (context, child) {
+                    return Theme(
+                      data: ThemeData.dark().copyWith(
+                        colorScheme: const ColorScheme.dark(
+                          primary: AppColors.primary,
+                          surface: AppColors.surface,
+                          onSurface: Colors.white,
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
                 );
                 if (picked != null) {
                   setState(() => _selectedDateRange = picked);

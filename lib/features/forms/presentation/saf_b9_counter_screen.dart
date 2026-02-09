@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
 import '../../../core/widgets/dialogs/hurda_selection_dialog.dart';
+import '../../../core/widgets/forms/modern_quick_button.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
 import '../logic/cubits/production_counter_cubit.dart';
@@ -55,27 +56,35 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
 
   int get _currentAmount => int.tryParse(_amountController.text) ?? 1;
 
-  void _addToDuzce() {
-    context.read<ProductionCounterCubit>().incrementDuzce(_currentAmount);
+  void _addToDuzce([BuildContext? ctx]) {
+    final cubitContext = ctx ?? context;
+    print('DEBUG: _addToDuzce called with amount: $_currentAmount');
+    cubitContext.read<ProductionCounterCubit>().incrementDuzce(_currentAmount);
     _amountController.text = '1';
   }
 
-  void _addToAlmanya() {
-    context.read<ProductionCounterCubit>().incrementAlmanya(_currentAmount);
+  void _addToAlmanya([BuildContext? ctx]) {
+    final cubitContext = ctx ?? context;
+    print('DEBUG: _addToAlmanya called with amount: $_currentAmount');
+    cubitContext.read<ProductionCounterCubit>().incrementAlmanya(
+      _currentAmount,
+    );
     _amountController.text = '1';
   }
 
-  void _addToRework() {
-    context.read<ProductionCounterCubit>().incrementRework(_currentAmount);
+  void _addToRework([BuildContext? ctx]) {
+    final cubitContext = ctx ?? context;
+    cubitContext.read<ProductionCounterCubit>().incrementRework(_currentAmount);
     _amountController.text = '1';
   }
 
-  void _showHurdaPopup() {
+  void _showHurdaPopup([BuildContext? ctx]) {
+    final cubitContext = ctx ?? context;
     showDialog(
-      context: context,
+      context: cubitContext,
       builder: (context) => HurdaSelectionDialog(
         onReasonSelected: (reason) {
-          context.read<ProductionCounterCubit>().incrementHurda(
+          cubitContext.read<ProductionCounterCubit>().incrementHurda(
             _currentAmount,
             reason,
           );
@@ -481,33 +490,47 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
                                                     ],
                                                   ),
                                                   const SizedBox(height: 8),
-                                                  // Quick Add
+                                                  // Quick Add/Subtract with modern buttons
                                                   Row(
                                                     children: [
-                                                      _buildQuickButton(
-                                                        '+5',
-                                                        () => _updateAmount(5),
+                                                      ModernQuickButton(
+                                                        label: '+5',
+                                                        onPressed: () =>
+                                                            _updateAmount(5),
+                                                        color: AppColors
+                                                            .duzceGreen,
+                                                        icon: LucideIcons.plus,
                                                       ),
                                                       const SizedBox(width: 8),
-                                                      _buildQuickButton(
-                                                        '+10',
-                                                        () => _updateAmount(10),
+                                                      ModernQuickButton(
+                                                        label: '+10',
+                                                        onPressed: () =>
+                                                            _updateAmount(10),
+                                                        color: AppColors
+                                                            .duzceGreen,
+                                                        icon: LucideIcons
+                                                            .chevronsUp,
                                                       ),
                                                     ],
                                                   ),
                                                   const SizedBox(height: 8),
-                                                  // Quick Subtract
                                                   Row(
                                                     children: [
-                                                      _buildQuickButton(
-                                                        '-5',
-                                                        () => _updateAmount(-5),
+                                                      ModernQuickButton(
+                                                        label: '-5',
+                                                        onPressed: () =>
+                                                            _updateAmount(-5),
+                                                        color: AppColors.error,
+                                                        icon: LucideIcons.minus,
                                                       ),
                                                       const SizedBox(width: 8),
-                                                      _buildQuickButton(
-                                                        '-10',
-                                                        () =>
+                                                      ModernQuickButton(
+                                                        label: '-10',
+                                                        onPressed: () =>
                                                             _updateAmount(-10),
+                                                        color: AppColors.error,
+                                                        icon: LucideIcons
+                                                            .chevronsDown,
                                                       ),
                                                     ],
                                                   ),
@@ -528,50 +551,66 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
                                         ),
                                         const SizedBox(height: 12),
 
-                                        // Action Buttons
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildActionButton(
-                                                'DÜZCE EKLE',
-                                                AppColors.duzceGreen,
-                                                LucideIcons.checkCircle,
-                                                _addToDuzce,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: _buildActionButton(
-                                                'ALMANYA EKLE',
-                                                AppColors.almanyaBlue,
-                                                LucideIcons.globe,
-                                                _addToAlmanya,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildActionButton(
-                                                'REWORK EKLE',
-                                                AppColors.reworkOrange,
+                                        // Action Buttons - Wrapped in Builder for correct context
+                                        Builder(
+                                          builder: (btnContext) {
+                                            return Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: _buildActionButton(
+                                                        'DÜZCE EKLE',
+                                                        AppColors.duzceGreen,
+                                                        LucideIcons.checkCircle,
+                                                        () => _addToDuzce(
+                                                          btnContext,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: _buildActionButton(
+                                                        'ALMANYA EKLE',
+                                                        AppColors.almanyaBlue,
+                                                        LucideIcons.globe,
+                                                        () => _addToAlmanya(
+                                                          btnContext,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: _buildActionButton(
+                                                        'REWORK EKLE',
+                                                        AppColors.reworkOrange,
 
-                                                LucideIcons.wrench,
-                                                _addToRework,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: _buildActionButton(
-                                                'HURDA EKLE',
-                                                AppColors.error,
-                                                LucideIcons.trash2,
-                                                _showHurdaPopup,
-                                              ),
-                                            ),
-                                          ],
+                                                        LucideIcons.wrench,
+                                                        () => _addToRework(
+                                                          btnContext,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: _buildActionButton(
+                                                        'HURDA EKLE',
+                                                        AppColors.error,
+                                                        LucideIcons.trash2,
+                                                        () => _showHurdaPopup(
+                                                          btnContext,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            );
+                                          },
                                         ),
                                         const SizedBox(height: 16),
                                         // Açıklama Input
@@ -707,57 +746,64 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
                                         ),
                                         const SizedBox(height: 16),
                                         // Save Button
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton.icon(
-                                            onPressed: () {
-                                              // Reset all fields
-                                              // Reset all fields
-                                              context
-                                                  .read<
-                                                    ProductionCounterCubit
-                                                  >()
-                                                  .clearAll();
-                                              setState(() {
-                                                _amountController.text = '1';
-                                                _aciklamaController.clear();
-                                                _selectedTezgah = null;
-                                              });
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: const Text(
-                                                    'Veriler kaydedildi ve sıfırlandı',
-                                                  ),
-                                                  backgroundColor:
-                                                      AppColors.duzceGreen,
-                                                  duration: const Duration(
-                                                    seconds: 2,
-                                                  ),
+                                        // Save Button - Wrapped for correct context
+                                        Builder(
+                                          builder: (btnContext) {
+                                            return SizedBox(
+                                              width: double.infinity,
+                                              child: ElevatedButton.icon(
+                                                onPressed: () {
+                                                  // Reset all fields
+                                                  btnContext
+                                                      .read<
+                                                        ProductionCounterCubit
+                                                      >()
+                                                      .clearAll();
+                                                  setState(() {
+                                                    _amountController.text =
+                                                        '1';
+                                                    _aciklamaController.clear();
+                                                    _selectedTezgah = null;
+                                                  });
+                                                  ScaffoldMessenger.of(
+                                                    btnContext,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: const Text(
+                                                        'Veriler kaydedildi ve sıfırlandı',
+                                                      ),
+                                                      backgroundColor:
+                                                          AppColors.duzceGreen,
+                                                      duration: const Duration(
+                                                        seconds: 2,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                icon: const Icon(
+                                                  LucideIcons.save,
+                                                  size: 18,
                                                 ),
-                                              );
-                                            },
-                                            icon: const Icon(
-                                              LucideIcons.save,
-                                              size: 18,
-                                            ),
-                                            label: const Text('KAYDET'),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  AppColors.primary,
-                                              foregroundColor: Colors.white,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 16,
+                                                label: const Text('KAYDET'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      AppColors.primary,
+                                                  foregroundColor: Colors.white,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 16,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
                                                   ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
+                                                  elevation: 0,
+                                                ),
                                               ),
-                                              elevation: 0,
-                                            ),
-                                          ),
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
@@ -908,33 +954,16 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
     );
   }
 
-  Widget _buildQuickButton(String label, VoidCallback onTap) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildCounterDisplay(String label, int value, Color color) {
+    // TOPLAM gets white background, others use their color
+    final bgColor = label == 'TOPLAM'
+        ? Colors.white.withValues(alpha: 0.1)
+        : color.withValues(alpha: 0.1);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: bgColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),

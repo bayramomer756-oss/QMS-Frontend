@@ -1,9 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
+import '../../../core/widgets/forms/date_time_form_field.dart';
+import '../../../core/widgets/forms/product_info_card.dart';
+import '../../../core/providers/user_permission_provider.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
 
@@ -30,16 +34,23 @@ class ReworkEntry {
   });
 }
 
-class ReworkScreen extends StatefulWidget {
+class ReworkScreen extends ConsumerStatefulWidget {
   final DateTime? initialDate;
   const ReworkScreen({super.key, this.initialDate});
 
   @override
-  State<ReworkScreen> createState() => _ReworkScreenState();
+  ConsumerState<ReworkScreen> createState() => _ReworkScreenState();
 }
 
-class _ReworkScreenState extends State<ReworkScreen> {
+class _ReworkScreenState extends ConsumerState<ReworkScreen> {
   final String _operatorName = 'Furkan Yılmaz';
+
+  // Date Time
+  DateTime _selectedDateTime = DateTime.now();
+
+  // Product Info
+  String? _productName;
+  String? _productType;
 
   // Kayıtlar listesi
   final List<ReworkEntry> _entries = [];
@@ -330,54 +341,51 @@ class _ReworkScreenState extends State<ReworkScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 16),
-
-                                      // First Row: Ürün Kodu, Adet
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            flex: 3,
-                                            child: _buildInputField(
-                                              label: 'Ürün Kodu',
-                                              controller:
-                                                  _productCodeController,
-                                              icon: LucideIcons.box,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: _buildQuantityField(
-                                              label: 'Adet',
-                                              controller: _quantityController,
-                                            ),
-                                          ),
-                                        ],
+                                      // Date and Time Field
+                                      DateTimeFormField(
+                                        initialDateTime: _selectedDateTime,
+                                        onChanged: (newDateTime) {
+                                          setState(
+                                            () =>
+                                                _selectedDateTime = newDateTime,
+                                          );
+                                        },
+                                        isEnabled: ref
+                                            .watch(
+                                              userPermissionProvider.notifier,
+                                            )
+                                            .canEditForms(),
+                                        label: 'Tarih ve Saat',
                                       ),
                                       const SizedBox(height: 12),
 
-                                      // Second Row: Ürün Adı, Ürün Türü (NEW)
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            flex: 2,
-                                            child: _buildInputField(
-                                              label: 'Ürün Adı',
-                                              controller:
-                                                  _productNameController,
-                                              icon: LucideIcons.tag,
-                                              enabled: false,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: _buildInputField(
-                                              label: 'Ürün Türü',
-                                              controller:
-                                                  _productTypeController,
-                                              icon: LucideIcons.package,
-                                              enabled: false,
-                                            ),
-                                          ),
-                                        ],
+                                      // Product Info Card
+                                      ProductInfoCard(
+                                        productCodeController:
+                                            _productCodeController,
+                                        productName: _productName,
+                                        productType: _productType,
+                                        onProductCodeChanged: (code) {
+                                          setState(() {
+                                            if (code.isEmpty) {
+                                              _productName = null;
+                                              _productType = null;
+                                            }
+                                          });
+                                        },
+                                        onProductSelected: (product) {
+                                          setState(() {
+                                            _productName = product.urunAdi;
+                                            _productType = product.urunTuru;
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Adet
+                                      _buildQuantityField(
+                                        label: 'Adet',
+                                        controller: _quantityController,
                                       ),
                                       const SizedBox(height: 12),
 
