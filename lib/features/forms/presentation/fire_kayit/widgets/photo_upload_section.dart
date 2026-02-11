@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../../core/constants/app_colors.dart';
 
 /// Photo upload section with camera and gallery options
@@ -46,12 +47,19 @@ class PhotoUploadSection extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  File(selectedImage!.path),
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                child: kIsWeb
+                    ? Image.network(
+                        selectedImage!.path,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.file(
+                        File(selectedImage!.path),
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
               ),
               Positioned(
                 top: 8,

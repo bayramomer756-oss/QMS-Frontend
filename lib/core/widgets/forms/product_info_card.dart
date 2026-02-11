@@ -69,7 +69,7 @@ class _ProductInfoCardState extends ConsumerState<ProductInfoCard> {
             return productSearchState.when(
               data: (products) => products,
               loading: () => <Product>[],
-              error: (_, __) => <Product>[],
+              error: (_, _) => <Product>[],
             );
           },
           displayStringForOption: (Product product) => product.urunKodu,
@@ -274,7 +274,8 @@ class _ProductInfoCardState extends ConsumerState<ProductInfoCard> {
         ),
 
         // Product Info Display Card
-        if (widget.productName != null || widget.productType != null) ...[
+        if ((widget.productName?.isNotEmpty ?? false) ||
+            (widget.productType?.isNotEmpty ?? false)) ...[
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(14),

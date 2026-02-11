@@ -24,8 +24,4 @@ class TokenStorage {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.authTokenKey);
   }
-
-  Future<void> deleteToken() async {
-    await clearToken();
-  }
 }

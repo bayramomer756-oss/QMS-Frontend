@@ -1,12 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
+import '../../../core/widgets/forms/product_info_card.dart';
+import '../../../core/widgets/forms/batch_number_picker.dart';
+import '../../../core/widgets/forms/input_field_widget.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
-import '../../../core/widgets/forms/product_info_card.dart';
 
 class GirisKaliteKontrolScreen extends StatefulWidget {
   final DateTime? initialDate;
@@ -27,28 +28,17 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
   final _quantityController = TextEditingController(text: '1');
   final _aciklamaController = TextEditingController();
 
-  // Şarj No Controllers
-  final _sarjDayController = TextEditingController();
-  final _sarjLineController = TextEditingController();
-  int _sarjYear = 26;
-  String _sarjFoundry = 'F';
+  // Batch number from BatchNumberPicker
+  // ignore: unused_field
+  String _batchNo = '';
 
   // State
   String? _selectedStatus; // Kabul, Red, Şartlı Kabul
   final List<String> _statusOptions = ['Kabul', 'Red', 'Şartlı Kabul'];
 
-  final List<String> _foundryOptions = ['F', 'A'];
-
   @override
   void initState() {
     super.initState();
-    final date = widget.initialDate ?? DateTime.now();
-    _sarjYear = date.year % 100;
-
-    final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
-    _sarjDayController.text = dayOfYear.toString().padLeft(3, '0');
-
-    _sarjLineController.text = 'A';
   }
 
   @override
@@ -60,17 +50,7 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
     _productTypeController.dispose();
     _quantityController.dispose();
     _aciklamaController.dispose();
-    _sarjDayController.dispose();
-    _sarjLineController.dispose();
     super.dispose();
-  }
-
-  String get _batchNo {
-    final dayStr = _sarjDayController.text.padLeft(3, '0');
-    final lineStr = _sarjLineController.text.isNotEmpty
-        ? _sarjLineController.text.toUpperCase()
-        : 'A';
-    return '$_sarjYear$_sarjFoundry$dayStr$lineStr';
   }
 
   void _saveEntry() {
@@ -236,7 +216,7 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _buildInputField(
+                                      child: InputFieldWidget(
                                         label: 'Tedarikçi Firma',
                                         controller: _supplierController,
                                         icon: LucideIcons.truck,
@@ -244,7 +224,7 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: _buildInputField(
+                                      child: InputFieldWidget(
                                         label: 'İrsaliye / Fatura No',
                                         controller: _invoiceNoController,
                                         icon: LucideIcons.fileText,
@@ -279,7 +259,7 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                 const SizedBox(height: 12),
 
                                 // Adet
-                                _buildInputField(
+                                InputFieldWidget(
                                   label: 'Gelen Miktar',
                                   controller: _quantityController,
                                   icon: LucideIcons.layers,
@@ -291,7 +271,12 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                 const SizedBox(height: 16),
 
                                 // Şarj No
-                                _buildSarjNoPicker(),
+                                BatchNumberPicker(
+                                  initialDate: widget.initialDate,
+                                  onBatchNoChanged: (batchNo) {
+                                    setState(() => _batchNo = batchNo);
+                                  },
+                                ),
                                 const SizedBox(height: 12),
 
                                 // Kontrol Sonucu (Status)
@@ -324,7 +309,7 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                 const SizedBox(height: 12),
 
                                 // Açıklama
-                                _buildInputField(
+                                InputFieldWidget(
                                   label: 'Açıklama / Notlar',
                                   controller: _aciklamaController,
                                   icon: LucideIcons.fileText,
@@ -395,48 +380,6 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
     );
   }
 
-  Widget _buildInputField({
-    required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-    bool enabled = true,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: TextFormField(
-            controller: controller,
-            keyboardType: keyboardType,
-            maxLines: maxLines,
-            enabled: enabled,
-            style: TextStyle(color: AppColors.textMain, fontSize: 14),
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildRadioOption({
     required String val,
     required String? groupVal,
@@ -483,254 +426,6 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSarjNoPicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Şarj No',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Icon(LucideIcons.hash, color: AppColors.textSecondary, size: 16),
-              const SizedBox(width: 12),
-              // Yıl (26)
-              _buildStepperBox(
-                value: _sarjYear.toString().padLeft(2, '0'),
-                onDecrement: () =>
-                    setState(() => _sarjYear = (_sarjYear - 1).clamp(0, 99)),
-                onIncrement: () =>
-                    setState(() => _sarjYear = (_sarjYear + 1).clamp(0, 99)),
-              ),
-              const SizedBox(width: 4),
-              // Dökümhane (F)
-              _buildStepperBox(
-                value: _sarjFoundry,
-                onDecrement: () {
-                  final idx = _foundryOptions.indexOf(_sarjFoundry);
-                  setState(
-                    () => _sarjFoundry =
-                        _foundryOptions[(idx - 1 + _foundryOptions.length) %
-                            _foundryOptions.length],
-                  );
-                },
-                onIncrement: () {
-                  final idx = _foundryOptions.indexOf(_sarjFoundry);
-                  setState(
-                    () => _sarjFoundry =
-                        _foundryOptions[(idx + 1) % _foundryOptions.length],
-                  );
-                },
-              ),
-              const SizedBox(width: 4),
-              // Gün (025)
-              _buildStepperField(
-                controller: _sarjDayController,
-                width: 80,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(3),
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                onDecrement: () {
-                  int current = int.tryParse(_sarjDayController.text) ?? 1;
-                  current = (current - 1).clamp(1, 366);
-                  _sarjDayController.text = current.toString().padLeft(3, '0');
-                  setState(() {});
-                },
-                onIncrement: () {
-                  int current = int.tryParse(_sarjDayController.text) ?? 1;
-                  current = (current + 1).clamp(1, 366);
-                  _sarjDayController.text = current.toString().padLeft(3, '0');
-                  setState(() {});
-                },
-              ),
-              const SizedBox(width: 4),
-              // Hat (A)
-              _buildStepperField(
-                controller: _sarjLineController,
-                width: 60,
-                isText: true,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(1),
-                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]')),
-                ],
-                onDecrement: () {
-                  String current = _sarjLineController.text.toUpperCase();
-                  if (current.isEmpty) current = 'A';
-                  int code = current.codeUnitAt(0);
-                  if (code > 65) {
-                    _sarjLineController.text = String.fromCharCode(code - 1);
-                  } else {
-                    _sarjLineController.text = 'Z';
-                  }
-                  setState(() {});
-                },
-                onIncrement: () {
-                  String current = _sarjLineController.text.toUpperCase();
-                  if (current.isEmpty) current = 'A';
-                  int code = current.codeUnitAt(0);
-                  if (code < 90) {
-                    _sarjLineController.text = String.fromCharCode(code + 1);
-                  } else {
-                    _sarjLineController.text = 'A';
-                  }
-                  setState(() {});
-                },
-              ),
-              const Spacer(),
-              // Sonuç gösterimi
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(
-                  _batchNo,
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStepperBox({
-    required String value,
-    required VoidCallback onDecrement,
-    required VoidCallback onIncrement,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: onDecrement,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Icon(
-                LucideIcons.chevronLeft,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              value,
-              style: TextStyle(
-                color: AppColors.textMain,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          InkWell(
-            onTap: onIncrement,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Icon(
-                LucideIcons.chevronRight,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepperField({
-    required TextEditingController controller,
-    required double width,
-    required VoidCallback onDecrement,
-    required VoidCallback onIncrement,
-    bool isText = false,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return Container(
-      width: width,
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: onDecrement,
-            child: Icon(
-              LucideIcons.chevronLeft,
-              size: 16,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: isText ? TextInputType.text : TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: inputFormatters,
-              style: TextStyle(
-                color: AppColors.textMain,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onChanged: (value) => setState(() {}),
-            ),
-          ),
-          InkWell(
-            onTap: onIncrement,
-            child: Icon(
-              LucideIcons.chevronRight,
-              size: 16,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
       ),
     );
   }

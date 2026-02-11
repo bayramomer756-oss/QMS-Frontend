@@ -1,12 +1,14 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
 import '../../../core/widgets/forms/date_time_form_field.dart';
 import '../../../core/widgets/forms/product_info_card.dart';
+import '../../../core/widgets/forms/batch_number_picker.dart';
+import '../../../core/widgets/forms/quantity_field_widget.dart';
+import '../../../core/widgets/forms/input_field_widget.dart';
 import '../../../core/providers/user_permission_provider.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
@@ -55,30 +57,14 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
   // Kayıtlar listesi
   final List<ReworkEntry> _entries = [];
 
-  // Mevcut giriş için controller'lar
+  // Controllers
   final _productCodeController = TextEditingController();
-  final _productNameController = TextEditingController();
-  final _productTypeController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
   final _aciklamaController = TextEditingController();
-  final _sarjDayController = TextEditingController();
-  final _sarjLineController = TextEditingController();
 
-  // Şarj No bileşenleri
-  int _sarjYear = 26;
-  String _sarjFoundry = 'F';
-
-  // Dökümhane seçenekleri
-  final List<String> _foundryOptions = ['F', 'A'];
-
-  // Şarj No'yu birleştir
-  String get _batchNo {
-    final dayStr = _sarjDayController.text.padLeft(3, '0');
-    final lineStr = _sarjLineController.text.isNotEmpty
-        ? _sarjLineController.text.toUpperCase()
-        : 'A';
-    return '$_sarjYear$_sarjFoundry$dayStr$lineStr';
-  }
+  // Batch number from BatchNumberPicker
+  String _batchNo = '';
+  Key _batchNumberPickerKey = UniqueKey();
 
   // Dropdown değerleri
   String? _selectedErrorReason;
@@ -102,22 +88,13 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
   @override
   void initState() {
     super.initState();
-    final now = widget.initialDate ?? DateTime.now();
-    _sarjYear = now.year % 100;
-    final day = now.difference(DateTime(now.year, 1, 1)).inDays + 1;
-    _sarjDayController.text = day.toString().padLeft(3, '0');
-    _sarjLineController.text = 'A';
   }
 
   @override
   void dispose() {
     _productCodeController.dispose();
-    _productNameController.dispose();
-    _productTypeController.dispose();
     _quantityController.dispose();
     _aciklamaController.dispose();
-    _sarjDayController.dispose();
-    _sarjLineController.dispose();
     super.dispose();
   }
 
@@ -189,11 +166,9 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
       _aciklamaController.clear();
       _selectedErrorReason = null;
       _selectedResult = null;
-
-      _sarjYear = 26; // Default to 26
-      _sarjDayController.text = '025'; // Default to 025
-      _sarjFoundry = 'F';
-      _sarjLineController.text = 'A';
+      // Reset BatchNumberPicker
+      _batchNo = '';
+      _batchNumberPickerKey = UniqueKey();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -383,14 +358,27 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
                                       const SizedBox(height: 12),
 
                                       // Adet
-                                      _buildQuantityField(
-                                        label: 'Adet',
-                                        controller: _quantityController,
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: QuantityFieldWidget(
+                                              label: 'Adet',
+                                              controller: _quantityController,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: BatchNumberPicker(
+                                              key: _batchNumberPickerKey,
+                                              onBatchNoChanged: (batchNo) {
+                                                setState(
+                                                  () => _batchNo = batchNo,
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 12),
-
-                                      // Şarj No - Minimal Picker
-                                      _buildSarjNoPicker(),
                                       const SizedBox(height: 12),
 
                                       // Hata Nedeni, Sonuç
@@ -425,7 +413,7 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
                                       const SizedBox(height: 12),
 
                                       // Açıklama
-                                      _buildInputField(
+                                      InputFieldWidget(
                                         label: 'Açıklama',
                                         controller: _aciklamaController,
                                         icon: LucideIcons.fileText,
@@ -537,295 +525,6 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSarjNoPicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Şarj No',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Icon(LucideIcons.hash, color: AppColors.textSecondary, size: 16),
-              const SizedBox(width: 12),
-              // Yıl (26)
-              _buildStepperBox(
-                value: _sarjYear.toString().padLeft(2, '0'),
-                onDecrement: () =>
-                    setState(() => _sarjYear = (_sarjYear - 1).clamp(0, 99)),
-                onIncrement: () =>
-                    setState(() => _sarjYear = (_sarjYear + 1).clamp(0, 99)),
-              ),
-              const SizedBox(width: 4),
-              // Dökümhane (F)
-              _buildStepperBox(
-                value: _sarjFoundry,
-                onDecrement: () {
-                  final idx = _foundryOptions.indexOf(_sarjFoundry);
-                  setState(
-                    () => _sarjFoundry =
-                        _foundryOptions[(idx - 1 + _foundryOptions.length) %
-                            _foundryOptions.length],
-                  );
-                },
-                onIncrement: () {
-                  final idx = _foundryOptions.indexOf(_sarjFoundry);
-                  setState(
-                    () => _sarjFoundry =
-                        _foundryOptions[(idx + 1) % _foundryOptions.length],
-                  );
-                },
-              ),
-              const SizedBox(width: 4),
-              // Gün (025) - TextField ile Stepper
-              _buildStepperField(
-                controller: _sarjDayController,
-                width: 80, // Increased from 70
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(3),
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                onDecrement: () {
-                  int current = int.tryParse(_sarjDayController.text) ?? 1;
-                  current = (current - 1).clamp(1, 366);
-                  _sarjDayController.text = current.toString().padLeft(3, '0');
-                  setState(() {});
-                },
-                onIncrement: () {
-                  int current = int.tryParse(_sarjDayController.text) ?? 1;
-                  current = (current + 1).clamp(1, 366);
-                  _sarjDayController.text = current.toString().padLeft(3, '0');
-                  setState(() {});
-                },
-              ),
-              const SizedBox(width: 4),
-              // Hat (A) - TextField ile Stepper
-              _buildStepperField(
-                controller: _sarjLineController,
-                width: 60, // Increased from 50
-                isText: true,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(1),
-                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]')),
-                ],
-                onDecrement: () {
-                  String current = _sarjLineController.text.toUpperCase();
-                  if (current.isEmpty) current = 'A';
-                  int code = current.codeUnitAt(0);
-                  if (code > 65) {
-                    _sarjLineController.text = String.fromCharCode(code - 1);
-                  } else {
-                    _sarjLineController.text = 'Z';
-                  }
-                  setState(() {});
-                },
-                onIncrement: () {
-                  String current = _sarjLineController.text.toUpperCase();
-                  if (current.isEmpty) current = 'A';
-                  int code = current.codeUnitAt(0);
-                  if (code < 90) {
-                    _sarjLineController.text = String.fromCharCode(code + 1);
-                  } else {
-                    _sarjLineController.text = 'A';
-                  }
-                  setState(() {});
-                },
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(
-                  _batchNo,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStepperBox({
-    required String value,
-    required VoidCallback onDecrement,
-    required VoidCallback onIncrement,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: onDecrement,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Icon(
-                LucideIcons.chevronLeft,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              value,
-              style: TextStyle(
-                color: AppColors.textMain,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          InkWell(
-            onTap: onIncrement,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Icon(
-                LucideIcons.chevronRight,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepperField({
-    required TextEditingController controller,
-    required double width,
-    required VoidCallback onDecrement,
-    required VoidCallback onIncrement,
-    bool isText = false,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return Container(
-      width: width,
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: onDecrement,
-            child: Icon(
-              LucideIcons.chevronLeft,
-              size: 16,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: isText ? TextInputType.text : TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: inputFormatters,
-              style: TextStyle(
-                color: AppColors.textMain,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero, // Centers text vertically
-              ),
-              onChanged: (value) => setState(() {}),
-            ),
-          ),
-          InkWell(
-            onTap: onIncrement,
-            child: Icon(
-              LucideIcons.chevronRight,
-              size: 16,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputField({
-    required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-    bool enabled = true,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: TextFormField(
-            controller: controller,
-            keyboardType: keyboardType,
-            maxLines: maxLines,
-            enabled: enabled,
-            style: TextStyle(color: AppColors.textMain, fontSize: 14),
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -1050,83 +749,6 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildQuantityField({
-    required String label,
-    required TextEditingController controller,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              // Decrease button
-              InkWell(
-                onTap: () {
-                  int current = int.tryParse(controller.text) ?? 1;
-                  if (current > 1) {
-                    setState(() => controller.text = (current - 1).toString());
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  child: Icon(
-                    LucideIcons.minus,
-                    color: AppColors.textSecondary,
-                    size: 18,
-                  ),
-                ),
-              ),
-              // Text field
-              Expanded(
-                child: TextFormField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textMain,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                ),
-              ),
-              // Increase button
-              InkWell(
-                onTap: () {
-                  int current = int.tryParse(controller.text) ?? 1;
-                  setState(() => controller.text = (current + 1).toString());
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  child: Icon(
-                    LucideIcons.plus,
-                    color: AppColors.textSecondary,
-                    size: 18,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

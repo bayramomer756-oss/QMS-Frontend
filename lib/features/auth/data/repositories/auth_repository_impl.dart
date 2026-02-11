@@ -66,6 +66,6 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<void> logout() async {
-    await _tokenStorage.deleteToken();
+    await _tokenStorage.clearToken();
   }
 }

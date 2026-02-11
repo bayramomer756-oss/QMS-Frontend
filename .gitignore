@@ -12,16 +12,15 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# IntelliJ/Android Studio
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VS Code
+.vscode/
+*.code-workspace
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -29,10 +28,18 @@ migrate_working_dir/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
 /build/
 /coverage/
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.gr.dart
+*.config.dart
+*.mocks.dart
 
 # Symbolication related
 app.*.symbols
@@ -55,6 +62,9 @@ app.*.map.json
 /android/captures/
 /android/gradlew
 /android/gradlew.bat
+/android/.cxx/
+/android/app/*.apk
+/android/app/*.aab
 
 # iOS generic
 /ios/Flutter/App.framework
@@ -63,12 +73,24 @@ app.*.map.json
 /ios/Flutter/flutter_export_environment.sh
 /ios/ServiceDefinitions.json
 /ios/Runner/GeneratedPluginRegistrant.*
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/flutter_export_environment.sh
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.hmap
+*.ipa
+xcuserdata/
 
-# Windows specific (Important for your OS)
+# Windows specific
 /windows/flutter/ephemeral/
 /windows/flutter/generated_plugin_registrant.cc
 /windows/flutter/generated_plugin_registrant.h
 /windows/runner/resources/
+*.msix
+*.appx
 
 # Linux specific
 /linux/flutter/ephemeral/
@@ -78,6 +100,25 @@ app.*.map.json
 # MacOS specific
 /macos/Flutter/ephemeral/
 /macos/Flutter/generated_plugin_registrant.swift
+/macos/Pods/
+
+# Web specific
+/web/flutter_service_worker.js
+/web/manifest.json
+/web/version.json
+
+# Database files (if using local database)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Test coverage
+/test/.test_coverage.dart
+lcov.info
 
 # Exceptions to above rules
 !/android/app/src/main/assets/public.txt
+!.env.example
+

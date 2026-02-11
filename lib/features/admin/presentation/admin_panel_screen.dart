@@ -16,6 +16,9 @@ import 'tabs/report_edit_tab.dart';
 import 'widgets/user_management_tab.dart';
 import 'widgets/master_data_tab.dart';
 
+import 'final_search_tab.dart';
+import 'quality_search_tab.dart';
+
 class AdminPanelScreen extends ConsumerStatefulWidget {
   const AdminPanelScreen({super.key});
 
@@ -31,7 +34,7 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
   }
 
   @override
@@ -171,6 +174,14 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
                               text: 'Fire Ara',
                             ),
                             Tab(
+                              icon: Icon(LucideIcons.checkCheck),
+                              text: 'Final Ara',
+                            ),
+                            Tab(
+                              icon: Icon(LucideIcons.fileCheck),
+                              text: 'Kalite Onay Ara',
+                            ),
+                            Tab(
                               icon: Icon(LucideIcons.users),
                               text: 'Kullanıcı Yönetimi',
                             ),
@@ -191,6 +202,8 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
                             ReportEditTab(),
                             AnalysisScreen(),
                             FireSearchTab(),
+                            FinalSearchTab(),
+                            QualityApprovalSearchTab(),
                             UserManagementTab(),
                             MasterDataTab(),
                           ],

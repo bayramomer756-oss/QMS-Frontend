@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
 import '../../auth/presentation/login_screen.dart';
@@ -131,7 +132,10 @@ class _PaletGirisKaliteScreenState extends State<PaletGirisKaliteScreen> {
                               border: Border.all(color: AppColors.border),
                               image: pickedImagePath != null
                                   ? DecorationImage(
-                                      image: FileImage(File(pickedImagePath!)),
+                                      image: kIsWeb
+                                          ? NetworkImage(pickedImagePath!)
+                                          : FileImage(File(pickedImagePath!))
+                                                as ImageProvider,
                                       fit: BoxFit.cover,
                                     )
                                   : null,
@@ -648,9 +652,17 @@ class _PaletGirisKaliteScreenState extends State<PaletGirisKaliteScreen> {
                                             ),
                                             image: entry.imagePath != null
                                                 ? DecorationImage(
-                                                    image: FileImage(
-                                                      File(entry.imagePath!),
-                                                    ),
+                                                    image: kIsWeb
+                                                        ? NetworkImage(
+                                                            entry.imagePath!,
+                                                          )
+                                                        : FileImage(
+                                                                File(
+                                                                  entry
+                                                                      .imagePath!,
+                                                                ),
+                                                              )
+                                                              as ImageProvider,
                                                     fit: BoxFit.cover,
                                                   )
                                                 : null,

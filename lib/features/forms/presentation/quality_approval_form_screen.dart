@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/form_options.dart';
 import '../../../core/widgets/sidebar_navigation.dart';
 import '../../../core/widgets/forms/product_info_card.dart';
 import '../../../core/widgets/forms/date_time_form_field.dart';
+import '../../../core/widgets/forms/amount_button.dart';
+import '../../../core/widgets/forms/custom_text_field.dart';
 import '../../../core/providers/user_permission_provider.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
+import '../../auth/presentation/providers/auth_providers.dart';
 
 class QualityApprovalFormScreen extends ConsumerStatefulWidget {
   final DateTime? initialDate;
@@ -25,9 +29,7 @@ class _QualityApprovalFormScreenState
 
   // Form Controllers
   final _productCodeController = TextEditingController();
-  final _productNameController = TextEditingController();
-  final _productTypeController = TextEditingController();
-  final _amountController = TextEditingController(); // Yeni: Adet
+  final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
 
   // Form State
@@ -36,20 +38,10 @@ class _QualityApprovalFormScreenState
   String? _productType; // Product display type
   String _complianceStatus = 'Uygun'; // Uygun / RET
   String? _rejectCode;
-  final String _operatorName = 'Furkan Yılmaz';
-
-  // Mock Reject Codes
-  final List<String> _rejectCodes = [
-    'Hata 001 - Boyut Hatası',
-    'Hata 002 - Yüzey Hatası',
-    'Hata 003 - Montaj Hatası',
-  ];
 
   @override
   void dispose() {
     _productCodeController.dispose();
-    _productNameController.dispose();
-    _productTypeController.dispose();
     _amountController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -64,6 +56,10 @@ class _QualityApprovalFormScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Get current user for operator name
+    final userAsync = ref.watch(currentUserProvider);
+    final operatorName = userAsync.value?.fullName ?? 'Operatör';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -104,8 +100,8 @@ class _QualityApprovalFormScreenState
                     Navigator.of(context).pop(); // Geri dön (Formlar listesine)
                   }
                 },
-                operatorInitial: _operatorName.isNotEmpty
-                    ? _operatorName[0]
+                operatorInitial: operatorName.isNotEmpty
+                    ? operatorName[0]
                     : 'O',
                 onLogout: () => Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -231,65 +227,148 @@ class _QualityApprovalFormScreenState
                                       },
                                     ),
                                     const SizedBox(height: 16),
+                                    // Status and Amount Row
                                     Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
+                                        // Left: Compliance Status (Flex 3)
                                         Expanded(
-                                          child: Row(
+                                          flex: 3,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              _buildAmountButton(
-                                                LucideIcons.minus,
-                                                () => _updateAmount(-1),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: _buildTextField(
-                                                  label: 'Adet',
-                                                  controller: _amountController,
-                                                  icon: LucideIcons.hash,
-                                                  keyboardType:
-                                                      TextInputType.number,
-                                                  textAlign: TextAlign.center,
+                                              Text(
+                                                'Uygunluk Durumu',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                  color:
+                                                      AppColors.textSecondary,
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
-                                              _buildAmountButton(
-                                                LucideIcons.plus,
-                                                () => _updateAmount(1),
+                                              const SizedBox(height: 12),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: _buildStatusRadio(
+                                                      'Uygun',
+                                                      AppColors.success,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: _buildStatusRadio(
+                                                      'RET',
+                                                      AppColors.error,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        // Right: Amount (Flex 2)
+                                        Expanded(
+                                          flex: 2,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                'Adet',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.end,
+                                                children: [
+                                                  AmountButton(
+                                                    icon: LucideIcons.minus,
+                                                    onTap: () =>
+                                                        _updateAmount(-1),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: TextField(
+                                                      controller:
+                                                          _amountController,
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      keyboardType:
+                                                          TextInputType.number,
+                                                      style: const TextStyle(
+                                                        color:
+                                                            AppColors.textMain,
+                                                        fontSize: 14,
+                                                      ),
+                                                      decoration: InputDecoration(
+                                                        contentPadding:
+                                                            const EdgeInsets.symmetric(
+                                                              vertical: 12,
+                                                            ),
+                                                        border: OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                          borderSide:
+                                                              const BorderSide(
+                                                                color: AppColors
+                                                                    .border,
+                                                              ),
+                                                        ),
+                                                        enabledBorder: OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                          borderSide:
+                                                              const BorderSide(
+                                                                color: AppColors
+                                                                    .border,
+                                                              ),
+                                                        ),
+                                                        focusedBorder: OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                          borderSide:
+                                                              const BorderSide(
+                                                                color: AppColors
+                                                                    .primary,
+                                                                width: 2,
+                                                              ),
+                                                        ),
+                                                        filled: true,
+                                                        fillColor: AppColors
+                                                            .surfaceLight,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  AmountButton(
+                                                    icon: LucideIcons.plus,
+                                                    onTap: () =>
+                                                        _updateAmount(1),
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 24),
 
-                                    // Compliance Status Selector
-                                    Text(
-                                      'Uygunluk Durumu',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _buildStatusRadio(
-                                            'Uygun',
-                                            AppColors.success,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: _buildStatusRadio(
-                                            'RET',
-                                            AppColors.error,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                                     const SizedBox(height: 24),
 
                                     // Conditional Reject Code
@@ -345,7 +424,9 @@ class _QualityApprovalFormScreenState
                                                 vertical: 12,
                                               ),
                                         ),
-                                        items: _rejectCodes.map((code) {
+                                        items: FormOptions.rejectCodes.map((
+                                          code,
+                                        ) {
                                           return DropdownMenuItem(
                                             value: code,
                                             child: Text(code),
@@ -360,7 +441,7 @@ class _QualityApprovalFormScreenState
                                       const SizedBox(height: 16),
                                     ],
 
-                                    _buildTextField(
+                                    CustomTextField(
                                       label: 'Açıklama',
                                       controller: _descriptionController,
                                       icon: LucideIcons.fileText,
@@ -384,13 +465,13 @@ class _QualityApprovalFormScreenState
                                           );
                                           // Clear form
                                           _productCodeController.clear();
-                                          _productNameController.clear();
-                                          _productTypeController.clear();
                                           _amountController.clear();
                                           _descriptionController.clear();
                                           setState(() {
                                             _complianceStatus = 'Uygun';
                                             _rejectCode = null;
+                                            _productName = null;
+                                            _productType = null;
                                           });
                                           _formKey.currentState?.reset();
                                         }
@@ -432,66 +513,6 @@ class _QualityApprovalFormScreenState
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-    TextAlign textAlign = TextAlign.start,
-    bool enabled = true,
-  }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      textAlign: textAlign,
-      enabled: enabled,
-      style: TextStyle(color: AppColors.textMain, fontSize: 14),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-        prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.5),
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.error),
-        ),
-        filled: true,
-        fillColor: enabled
-            ? AppColors.surfaceLight
-            : AppColors.surfaceLight.withValues(alpha: 0.5),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
-      ),
-      validator: (value) {
-        if (enabled && (value == null || value.isEmpty)) {
-          return '$label boş bırakılamaz';
-        }
-        return null;
-      },
     );
   }
 
@@ -544,23 +565,6 @@ class _QualityApprovalFormScreenState
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildAmountButton(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Icon(icon, color: AppColors.textMain, size: 20),
       ),
     );
   }

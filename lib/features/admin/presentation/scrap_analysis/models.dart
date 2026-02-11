@@ -45,3 +45,119 @@ class FireAnalysisData {
     required this.batchNo, // 'sarjNo'
   });
 }
+
+// -- UPLOAD MODELS --
+class ScrapUploadItem {
+  final DateTime? date;
+  final String productCode;
+  final String factory; // D2, D3
+  final int quantity;
+
+  ScrapUploadItem({
+    this.date,
+    required this.productCode,
+    required this.factory,
+    required this.quantity,
+  });
+}
+
+class ScrapUploadBatch {
+  final List<ScrapUploadItem> items;
+  final DateTime date;
+
+  ScrapUploadBatch({required this.items, required this.date});
+}
+
+// -- DASHBOARD MODELS --
+
+class ScrapDashboardData {
+  final DateTime date;
+  final int totalFrenbuProduction;
+  final FactorySummary summary;
+  final List<FactoryDailyScrap> dailyScrapRates; // For Pie Chart
+  final List<ScrapTableItem> frenbuTable;
+  final List<DefectDistributionItem> frenbuDefectDistribution;
+  final List<ScrapTableItem> d2Table;
+  final List<ScrapTableItem> d3Table;
+  final List<ProductionEntry> d2CleanProducts;
+  final List<ProductionEntry> d3CleanProducts;
+
+  ScrapDashboardData({
+    required this.date,
+    required this.totalFrenbuProduction,
+    required this.summary,
+    required this.dailyScrapRates,
+    required this.frenbuTable,
+    required this.frenbuDefectDistribution,
+    required this.d2Table,
+    required this.d3Table,
+    required this.d2CleanProducts,
+    required this.d3CleanProducts,
+  });
+}
+
+class FactorySummary {
+  final int d2ScrapDto;
+  final double d2Rate;
+  final int d2Turned;
+
+  final int d3ScrapDto;
+  final double d3Rate;
+  final int d3Turned;
+
+  final int frenbuScrapDto;
+  final double frenbuRate;
+  final int frenbuTurned;
+
+  FactorySummary({
+    this.d2ScrapDto = 0,
+    this.d2Rate = 0.0,
+    this.d2Turned = 0,
+    this.d3ScrapDto = 0,
+    this.d3Rate = 0.0,
+    this.d3Turned = 0,
+    this.frenbuScrapDto = 0,
+    this.frenbuRate = 0.0,
+    this.frenbuTurned = 0,
+  });
+}
+
+class FactoryDailyScrap {
+  final String factory; // D2, D3, FRENBU
+  final double rate;
+  FactoryDailyScrap(this.factory, this.rate);
+}
+
+class ScrapTableItem {
+  final String productType; // Disk, Kampana, Porya
+  final String productCode;
+  final int productionQty;
+  final int scrapQty;
+  final double scrapRate;
+
+  ScrapTableItem({
+    required this.productType,
+    required this.productCode,
+    required this.productionQty,
+    required this.scrapQty,
+    required this.scrapRate,
+  });
+}
+
+class DefectDistributionItem {
+  final String defectName;
+  final int diskScrap;
+  final int drumScrap; // Kampana
+  final int hubScrap; // Porya
+  final int total;
+  final double rate;
+
+  DefectDistributionItem({
+    required this.defectName,
+    this.diskScrap = 0,
+    this.drumScrap = 0,
+    this.hubScrap = 0,
+    required this.total,
+    required this.rate,
+  });
+}

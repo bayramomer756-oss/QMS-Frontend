@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/form_options.dart';
 import '../../../../core/widgets/sidebar_navigation.dart';
 import '../../../../core/widgets/forms/form_section_title.dart';
 import '../../../../core/widgets/forms/date_time_form_field.dart';
@@ -51,11 +52,8 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
   final _quantityController = TextEditingController(text: '1');
   final _aciklamaController = TextEditingController();
 
-  // Şarj No Controllers
-  final _sarjDayController = TextEditingController();
-  final _sarjLineController = TextEditingController();
-  int _sarjYear = 26;
-  String _sarjFoundry = 'F';
+  // Batch number from BatchNumberPicker
+  String _batchNo = '';
 
   // State Variables
   DateTime _selectedDateTime = DateTime.now();
@@ -73,58 +71,9 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
   // Multi-entry list
   final List<FireEntry> _entries = [];
 
-  // Options
-  final List<String> _foundryOptions = ['F', 'A'];
-  final List<String> _machineOptions = [
-    'T01',
-    'T02',
-    'T03',
-    'T04',
-    'T05',
-    'CNC-A',
-    'CNC-B',
-    'CNC-C',
-    'M21',
-    'M22',
-  ];
-  final List<String> _zoneOptions = [
-    'Z1 (Giriş)',
-    'Z2 (İşleme)',
-    'Z3 (Montaj)',
-    'Z4 (Paketleme)',
-    'Z5 (Depo)',
-  ];
-  final List<String> _errorReasons = [
-    'İç Çap Hatası',
-    'Dış Çap Hatası',
-    'Profil Hatası',
-    'Yüzey Kalitesi',
-    'Çapak',
-    'Darbe/Çizik',
-    'Boyut Hatası',
-    'Montaj Uyumsuzluğu',
-    'Diğer',
-  ];
-  final List<String> _operationOptions = [
-    'İşleme',
-    'Montaj',
-    'Kalite Kontrol',
-    'Paketleme',
-    'Taşıma',
-  ];
-
   @override
   void initState() {
     super.initState();
-    final date = widget.initialDate ?? DateTime.now();
-    _sarjYear = date.year % 100;
-
-    final dayOfYear =
-        int.parse(List.filled(3, '0').join('')) +
-        date.difference(DateTime(date.year, 1, 1)).inDays +
-        1;
-    _sarjDayController.text = dayOfYear.toString().padLeft(3, '0');
-    _sarjLineController.text = 'A';
   }
 
   @override
@@ -132,8 +81,6 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
     _productCodeController.dispose();
     _quantityController.dispose();
     _aciklamaController.dispose();
-    _sarjDayController.dispose();
-    _sarjLineController.dispose();
     super.dispose();
   }
 
@@ -143,14 +90,6 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
     if (image != null) {
       setState(() => _selectedImage = image);
     }
-  }
-
-  String get _batchNo {
-    final dayStr = _sarjDayController.text.padLeft(3, '0');
-    final lineStr = _sarjLineController.text.isNotEmpty
-        ? _sarjLineController.text.toUpperCase()
-        : 'A';
-    return '$_sarjYear$_sarjFoundry$dayStr$lineStr';
   }
 
   void _addEntry() {
@@ -389,9 +328,9 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
             selectedDetectedMachine: _selectedDetectedMachine,
             selectedZone: _selectedZone,
             selectedOperation: _selectedOperation,
-            machineOptions: _machineOptions,
-            zoneOptions: _zoneOptions,
-            operationOptions: _operationOptions,
+            machineOptions: FormOptions.machines,
+            zoneOptions: FormOptions.zones,
+            operationOptions: FormOptions.operations,
             productState: _productState,
             onProcessedMachineChanged: (val) =>
                 setState(() => _selectedProcessedMachine = val),
@@ -412,13 +351,10 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
               Expanded(
                 flex: 6,
                 child: SarjNoSection(
-                  sarjDayController: _sarjDayController,
-                  sarjLineController: _sarjLineController,
-                  sarjYear: _sarjYear,
-                  sarjFoundry: _sarjFoundry,
-                  foundryOptions: _foundryOptions,
-                  onYearChanged: (val) => setState(() => _sarjYear = val),
-                  onFoundryChanged: (val) => setState(() => _sarjFoundry = val),
+                  initialDate: widget.initialDate,
+                  onBatchNoChanged: (batchNo) {
+                    setState(() => _batchNo = batchNo);
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -460,7 +396,7 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
                 child: CustomDropdown(
                   label: 'Hata Nedeni',
                   value: _selectedErrorReason,
-                  items: _errorReasons,
+                  items: FormOptions.errorReasons,
                   icon: Icons.error_outline,
                   onChanged: (val) =>
                       setState(() => _selectedErrorReason = val),
@@ -646,14 +582,10 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
     // Validate common fields
     if (_productCodeController.text.isEmpty ||
         _selectedProcessedMachine == null ||
-        _selectedZone == null ||
-        _selectedOperator == null ||
-        _selectedOperator!.isEmpty) {
+        _selectedZone == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Lütfen ürün, tezgah, bölge ve operatör bilgilerini doldurun',
-          ),
+          content: Text('Lütfen ürün, tezgah ve bölge bilgilerini doldurun'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -669,15 +601,17 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
       );
 
       // Map UI values to IDs
-      final tezgahId = _machineOptions.indexOf(_selectedProcessedMachine!) + 1;
-      final bolgeId = _zoneOptions.indexOf(_selectedZone!) + 1;
+      final tezgahId =
+          FormOptions.machines.indexOf(_selectedProcessedMachine!) + 1;
+      final bolgeId = FormOptions.zones.indexOf(_selectedZone!) + 1;
       final operasyonId = _selectedOperation != null
-          ? _operationOptions.indexOf(_selectedOperation!) + 1
+          ? FormOptions.operations.indexOf(_selectedOperation!) + 1
           : 1;
 
       // Submit each entry
       for (final entry in _entries) {
-        final retKoduId = _errorReasons.indexOf(entry.errorReason) + 1;
+        final retKoduId =
+            FormOptions.errorReasons.indexOf(entry.errorReason) + 1;
 
         final data = {
           'vardiyaId': 1,
@@ -687,9 +621,10 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
           'operasyonId': operasyonId,
           'bolgeId': bolgeId,
           'retKoduId': retKoduId,
-          'operatorAdi': _selectedOperator!,
+          // Operator is now optional
+          'operatorAdi': _selectedOperator ?? '',
           'aciklama': entry.description ?? '',
-          'tespitEdilenTezgah': _selectedDetectedMachine, // Additional field
+          'tespitEdilenTezgah': _selectedDetectedMachine,
         };
 
         final id = await ref
@@ -718,20 +653,20 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
         );
       }
 
-      // Reset Form
+      // Reset Form - KEEP Context Fields, Clear Entry Specifics
       setState(() {
         _entries.clear();
-        _productCodeController.clear();
-        _productName = null;
-        _productType = null;
-        _selectedProcessedMachine = null;
-        _selectedDetectedMachine = null;
-        _selectedZone = null;
-        _selectedOperation = null;
+        // _productCodeController.clear(); // KEPT
+        // _productName = null; // KEPT
+        // _productType = null; // KEPT
+        // _selectedProcessedMachine = null; // KEPT
+        // _selectedDetectedMachine = null; // KEPT (Optional context)
+        // _selectedZone = null; // KEPT
+        // _selectedOperation = null; // KEPT
         _quantityController.text = '1';
         _selectedErrorReason = null;
         _aciklamaController.clear();
-        _selectedOperator = null;
+        // _selectedOperator = null; // KEPT
         _selectedImage = null;
       });
     } catch (e) {

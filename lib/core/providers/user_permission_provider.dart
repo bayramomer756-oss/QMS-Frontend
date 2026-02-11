@@ -10,7 +10,7 @@ class UserPermissionNotifier extends Notifier<String> {
   @override
   String build() {
     // Default to 'Admin' for development/testing
-    // TODO: Integrate with actual authentication system
+
     return 'Admin';
   }
 
