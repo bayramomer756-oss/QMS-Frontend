@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../../core/widgets/forms/custom_text_field.dart';
 import '../../../../../core/widgets/forms/stepper_field.dart';
 
@@ -35,6 +36,10 @@ class ProductInfoSection extends StatelessWidget {
                 label: 'Ürün Kodu',
                 controller: productCodeController,
                 icon: Icons.inventory_2_outlined,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(7),
+                ],
               ),
             ),
             const SizedBox(width: 12),

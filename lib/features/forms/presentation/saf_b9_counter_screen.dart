@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
@@ -447,6 +448,10 @@ class _SafB9CounterScreenState extends State<SafB9CounterScreen> {
                                                             keyboardType:
                                                                 TextInputType
                                                                     .number,
+                                                            inputFormatters: [
+                                                              FilteringTextInputFormatter
+                                                                  .digitsOnly,
+                                                            ],
                                                             decoration: InputDecoration(
                                                               filled: true,
                                                               fillColor: AppColors

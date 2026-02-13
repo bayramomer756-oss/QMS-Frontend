@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../constants/app_colors.dart';
 
 /// Generic input field widget with icon and label
@@ -13,6 +14,7 @@ class InputFieldWidget extends StatelessWidget {
   final int maxLines;
   final bool enabled;
   final String? hintText;
+  final List<TextInputFormatter>? inputFormatters;
 
   const InputFieldWidget({
     super.key,
@@ -23,6 +25,7 @@ class InputFieldWidget extends StatelessWidget {
     this.maxLines = 1,
     this.enabled = true,
     this.hintText,
+    this.inputFormatters,
   });
 
   @override
@@ -46,6 +49,7 @@ class InputFieldWidget extends StatelessWidget {
             keyboardType: keyboardType,
             maxLines: maxLines,
             enabled: enabled,
+            inputFormatters: inputFormatters,
             style: TextStyle(color: AppColors.textMain, fontSize: 14),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),

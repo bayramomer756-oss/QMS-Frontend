@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../constants/app_colors.dart';
@@ -100,6 +101,10 @@ class _ProductInfoCardState extends ConsumerState<ProductInfoCard> {
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(7),
+                  ],
                   decoration: InputDecoration(
                     labelText: 'Ürün Kodu',
                     labelStyle: const TextStyle(

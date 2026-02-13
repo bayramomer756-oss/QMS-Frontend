@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/form_options.dart';
@@ -310,6 +311,10 @@ class _QualityApprovalFormScreenState
                                                             AppColors.textMain,
                                                         fontSize: 14,
                                                       ),
+                                                      inputFormatters: [
+                                                        FilteringTextInputFormatter
+                                                            .digitsOnly,
+                                                      ],
                                                       decoration: InputDecoration(
                                                         contentPadding:
                                                             const EdgeInsets.symmetric(

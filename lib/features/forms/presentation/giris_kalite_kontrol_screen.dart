@@ -6,6 +6,7 @@ import '../../../core/widgets/sidebar_navigation.dart';
 import '../../../core/widgets/forms/product_info_card.dart';
 import '../../../core/widgets/forms/batch_number_picker.dart';
 import '../../../core/widgets/forms/input_field_widget.dart';
+import '../../../core/widgets/forms/quantity_field_widget.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
 
@@ -259,11 +260,9 @@ class _GirisKaliteKontrolScreenState extends State<GirisKaliteKontrolScreen> {
                                 const SizedBox(height: 12),
 
                                 // Adet
-                                InputFieldWidget(
+                                QuantityFieldWidget(
                                   label: 'Gelen Miktar',
                                   controller: _quantityController,
-                                  icon: LucideIcons.layers,
-                                  keyboardType: TextInputType.number,
                                 ),
                                 const SizedBox(height: 24),
 

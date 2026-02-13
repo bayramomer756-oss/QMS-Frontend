@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_colors.dart';
 
 /// Quantity input with increment/decrement buttons
@@ -56,6 +57,7 @@ class QuantityInput extends StatelessWidget {
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                   ),
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ),
               // Increment Button

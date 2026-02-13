@@ -38,7 +38,7 @@ class BatchNumberPicker extends StatefulWidget {
 }
 
 class _BatchNumberPickerState extends State<BatchNumberPicker> {
-  static const List<String> _foundryOptions = ['F', 'M', 'S', 'K'];
+  static const List<String> _foundryOptions = ['F', 'A'];
 
   late int _year;
   late String _foundry;
