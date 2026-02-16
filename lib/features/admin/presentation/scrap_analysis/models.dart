@@ -52,12 +52,14 @@ class ScrapUploadItem {
   final String productCode;
   final String factory; // D2, D3
   final int quantity;
+  final int holeQty;
 
   ScrapUploadItem({
     this.date,
     required this.productCode,
     required this.factory,
     required this.quantity,
+    this.holeQty = 0,
   });
 }
 
@@ -70,13 +72,28 @@ class ScrapUploadBatch {
 
 // -- DASHBOARD MODELS --
 
+class ShiftData {
+  final String shiftName;
+  final int scrapQty;
+  final double rate;
+
+  ShiftData({
+    required this.shiftName,
+    required this.scrapQty,
+    required this.rate,
+  });
+}
+
 class ScrapDashboardData {
   final DateTime date;
   final int totalFrenbuProduction;
   final FactorySummary summary;
   final List<FactoryDailyScrap> dailyScrapRates; // For Pie Chart
+  final Map<String, int> holeProductionStats; // ADDED
   final List<ScrapTableItem> frenbuTable;
   final List<DefectDistributionItem> frenbuDefectDistribution;
+  final List<ProductionEntry> frenbuCleanProducts; // NEW
+  final List<ShiftData> frenbuShifts; // ADDED
   final List<ScrapTableItem> d2Table;
   final List<ScrapTableItem> d3Table;
   final List<ProductionEntry> d2CleanProducts;
@@ -87,8 +104,11 @@ class ScrapDashboardData {
     required this.totalFrenbuProduction,
     required this.summary,
     required this.dailyScrapRates,
+    required this.holeProductionStats, // ADDED
     required this.frenbuTable,
     required this.frenbuDefectDistribution,
+    required this.frenbuCleanProducts, // NEW
+    required this.frenbuShifts, // ADDED
     required this.d2Table,
     required this.d3Table,
     required this.d2CleanProducts,
@@ -128,12 +148,29 @@ class FactoryDailyScrap {
   FactoryDailyScrap(this.factory, this.rate);
 }
 
+class ScrapDetail {
+  final String defectName;
+  final int quantity;
+  final String? imageUrl;
+  final String? description;
+  final String batchNo;
+
+  ScrapDetail({
+    required this.defectName,
+    required this.quantity,
+    this.imageUrl,
+    this.description,
+    required this.batchNo,
+  });
+}
+
 class ScrapTableItem {
   final String productType; // Disk, Kampana, Porya
   final String productCode;
   final int productionQty;
   final int scrapQty;
   final double scrapRate;
+  final List<ScrapDetail> details; // Added details list
 
   ScrapTableItem({
     required this.productType,
@@ -141,6 +178,7 @@ class ScrapTableItem {
     required this.productionQty,
     required this.scrapQty,
     required this.scrapRate,
+    this.details = const [], // Default empty
   });
 }
 

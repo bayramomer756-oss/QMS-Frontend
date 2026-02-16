@@ -105,7 +105,7 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Lütfen tüm alanları doldurun'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.reworkOrange,
         ),
       );
       return;
@@ -153,7 +153,7 @@ class _ReworkScreenState extends ConsumerState<ReworkScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Kaydedilecek giriş yok'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.reworkOrange,
         ),
       );
       return;

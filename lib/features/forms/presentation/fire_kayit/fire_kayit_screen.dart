@@ -417,7 +417,7 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
 
           // Photo Upload Section
           const FormSectionTitle(
-            title: 'Fotoğraf Ekle (İsteğe Bağlı)',
+            title: 'Fotoğraf Ekle',
             icon: Icons.photo_camera_outlined,
           ),
           const SizedBox(height: 16),
@@ -434,7 +434,7 @@ class _FireKayitScreenState extends ConsumerState<FireKayitScreen> {
             child: ElevatedButton.icon(
               onPressed: _addEntry,
               icon: const Icon(Icons.add_circle_outline, size: 20),
-              label: const Text('KAYIT EKLE'),
+              label: const Text('LİSTEYE EKLE'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.almanyaBlue,
                 foregroundColor: Colors.white,

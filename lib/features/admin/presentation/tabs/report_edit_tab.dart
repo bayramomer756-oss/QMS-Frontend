@@ -52,7 +52,7 @@ class _ReportEditTabState extends State<ReportEditTab> {
     {
       'title': 'Rework Takip',
       'icon': LucideIcons.refreshCw,
-      'color': Colors.orange,
+      'color': AppColors.reworkOrange,
       'type': 'rework',
     },
     {
@@ -556,9 +556,7 @@ class _ReportEditTabState extends State<ReportEditTab> {
         return {
           'id': 'QA-${1000 + index}',
           'productGroup': index % 2 == 0 ? 'Fren Diski' : 'Poyra',
-          'status': index % 5 == 0
-              ? 'Reddedildi'
-              : 'Onaylandı', // Some rejections
+          'status': index % 5 == 0 ? 'RET' : 'Uygun', // Some rejections
           'notes': 'Yüzey kontrolü yapıldı.',
         };
       case 'final_control':

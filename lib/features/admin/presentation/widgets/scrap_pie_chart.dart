@@ -60,7 +60,7 @@ class ScrapPieChart extends StatelessWidget {
                           ),
                         ),
                         PieChartSectionData(
-                          color: Colors.orange,
+                          color: AppColors.reworkOrange,
                           value: factoryRates['D3'] ?? 0,
                           title:
                               'D3\n%${(factoryRates['D3'] ?? 0).toStringAsFixed(2)}',
@@ -94,7 +94,7 @@ class ScrapPieChart extends StatelessWidget {
                   children: [
                     _buildLegendItem('D2 Fabrika', Colors.blue),
                     const SizedBox(height: 8),
-                    _buildLegendItem('D3 Fabrika', Colors.orange),
+                    _buildLegendItem('D3 Fabrika', AppColors.reworkOrange),
                     const SizedBox(height: 8),
                     _buildLegendItem('FRENBU', Colors.grey),
                   ],

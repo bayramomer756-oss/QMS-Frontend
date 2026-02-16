@@ -31,7 +31,9 @@ class AppColors {
   // Üretim Sayaç Renkleri
   static const Color duzceGreen = Color(0xFF4CAF50); // Yeşil - Düzce
   static const Color almanyaBlue = Color(0xFF2196F3); // Mavi - Almanya
-  static const Color reworkOrange = Color(0xFFFF9800); // Turuncu - Rework
+  static const Color reworkOrange = Color(
+    0xFFFF6900,
+  ); // Turuncu - Rework (Revize 2)
 
   // Status Çizgisi Renkleri (Kart sol kenarı için)
   static const Color statusValid = Color(0xFFFFFFFF); // Beyaz - Geçerli

@@ -11,13 +11,14 @@ import '../../forms/presentation/forms_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import 'scrap_analysis/analysis_screen.dart';
 import 'fire_search_tab.dart';
+import 'final_search_tab.dart'; // Restore
+import 'quality_search_tab.dart'; // Correct file name
 import 'tabs/report_summary_tab.dart';
 import 'tabs/report_edit_tab.dart';
 import 'widgets/user_management_tab.dart';
 import 'widgets/master_data_tab.dart';
 
-import 'final_search_tab.dart';
-import 'quality_search_tab.dart';
+import 'tabs/production_entry_admin_tab.dart'; // Import
 
 class AdminPanelScreen extends ConsumerStatefulWidget {
   const AdminPanelScreen({super.key});
@@ -34,7 +35,7 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 9, vsync: this); // Increased length
   }
 
   @override
@@ -166,6 +167,11 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
                               text: 'Rapor Düzenleme',
                             ),
                             Tab(
+                              // Text
+                              icon: Icon(LucideIcons.listPlus),
+                              text: 'Üretim Verisi Girişi',
+                            ),
+                            Tab(
                               icon: Icon(LucideIcons.pieChart),
                               text: 'Fire Analizi',
                             ),
@@ -200,6 +206,7 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
                           children: const [
                             ReportSummaryTab(),
                             ReportEditTab(),
+                            ProductionEntryAdminTab(), // Content
                             AnalysisScreen(),
                             FireSearchTab(),
                             FinalSearchTab(),

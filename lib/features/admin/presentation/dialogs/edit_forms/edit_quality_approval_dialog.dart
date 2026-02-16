@@ -398,7 +398,7 @@ class _EditQualityApprovalDialogState extends State<EditQualityApprovalDialog> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: _complianceStatus == 'Uygun'
-                        ? AppColors.success.withValues(alpha: 0.15)
+                        ? AppColors.success
                         : AppColors.surfaceLight,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
@@ -416,7 +416,7 @@ class _EditQualityApprovalDialogState extends State<EditQualityApprovalDialog> {
                             ? LucideIcons.checkCircle2
                             : LucideIcons.circle,
                         color: _complianceStatus == 'Uygun'
-                            ? AppColors.success
+                            ? Colors.white
                             : AppColors.textSecondary,
                         size: 18,
                       ),
@@ -425,7 +425,7 @@ class _EditQualityApprovalDialogState extends State<EditQualityApprovalDialog> {
                         'Uygun',
                         style: TextStyle(
                           color: _complianceStatus == 'Uygun'
-                              ? AppColors.success
+                              ? Colors.white
                               : AppColors.textSecondary,
                           fontWeight: FontWeight.bold,
                         ),

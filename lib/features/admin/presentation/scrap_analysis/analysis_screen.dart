@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 
 import '../../../../core/constants/app_colors.dart';
 import 'analysis_provider.dart';
@@ -19,77 +17,74 @@ class AnalysisScreen extends ConsumerStatefulWidget {
 
 class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   DateTime? _selectedFilterDate;
-  final TextEditingController _productionController = TextEditingController();
-  int? _manualProductionQty;
-
-  @override
-  void dispose() {
-    _productionController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickExcelFile() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['xlsx', 'xls'],
-        withData: true,
-      );
-
-      if (result != null) {
-        List<int>? bytes = result.files.single.bytes;
-
-        if (bytes == null && result.files.single.path != null) {
-          final file = File(result.files.single.path!);
-          bytes = await file.readAsBytes();
-        }
-
-        if (bytes != null) {
-          ref.read(scrapAnalysisProvider.notifier).parseExcel(bytes);
-        } else {
-          _showError('Dosya okunamadı: İçerik boş.');
-        }
-      }
-    } catch (e) {
-      _showError('Dosya seçimi hatası: $e');
-    }
-  }
-
-  void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(scrapAnalysisProvider);
     final data = state.dashboardData;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            _buildHeader(data),
-            const SizedBox(height: 20),
-
-            if (state.isLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(40.0),
-                  child: CircularProgressIndicator(),
+    return DefaultTabController(
+      length: 4,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(
+                child: Container(
+                  color: AppColors.surface,
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  child: Column(
+                    children: [
+                      _buildHeader(data),
+                      const SizedBox(height: 24),
+                      const TabBar(
+                        isScrollable: true,
+                        indicatorColor: AppColors.primary,
+                        labelColor: AppColors.primary,
+                        unselectedLabelColor: AppColors.textSecondary,
+                        labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                        tabs: [
+                          Tab(text: 'Genel Bakış'),
+                          Tab(text: 'Frenbu Detay'),
+                          Tab(text: 'D2 Detay'),
+                          Tab(text: 'D3 Detay'),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              )
-            else if (data == null)
-              _buildEmptyState()
-            else
-              _buildDashboard(data),
-          ],
+              ),
+            ];
+          },
+          body: state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : data == null
+              ? _buildEmptyState()
+              : TabBarView(
+                  children: [
+                    _buildOverviewTab(data),
+                    _buildDetailTab(
+                      'Frenbu',
+                      data.frenbuTable,
+                      data.frenbuCleanProducts,
+                      AppColors.primary,
+                      shifts: data.frenbuShifts,
+                    ),
+                    _buildDetailTab(
+                      'D2 Fabrika',
+                      data.d2Table,
+                      data.d2CleanProducts,
+                      Colors.blue,
+                    ),
+                    _buildDetailTab(
+                      'D3 Fabrika',
+                      data.d3Table,
+                      data.d3CleanProducts,
+                      AppColors.reworkOrange,
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -97,62 +92,77 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
   Widget _buildHeader(ScrapDashboardData? data) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            LucideIcons.pieChart,
+            color: AppColors.primary,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                LucideIcons.pieChart,
-                color: AppColors.primary,
-                size: 28,
+            const Text(
+              'Fire Analiz Paneli',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textMain,
               ),
             ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Fire Analiz Dashboard',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textMain,
-                  ),
+            if (data != null)
+              Text(
+                'Son Güncelleme: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
                 ),
-                if (data != null)
-                  Text(
-                    'Veri Tarihi: ${DateFormat('dd.MM.yyyy').format(data.date)}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-              ],
-            ),
+              ),
           ],
         ),
-        Row(
-          children: [
-            // Date Filter - Always visible
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border, width: 2),
+        const Spacer(),
+        // Date Range Picker
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(
+                  LucideIcons.calendarDays,
+                  size: 20,
+                  color: AppColors.textSecondary,
+                ),
               ),
-              child: TextButton.icon(
-                onPressed: () async {
-                  final picked = await showDatePicker(
+              const SizedBox(width: 8),
+              Text(
+                _selectedFilterDate != null
+                    ? DateFormat('dd.MM.yyyy').format(_selectedFilterDate!)
+                    : 'Tarih Aralığı Seçiniz',
+                style: const TextStyle(
+                  color: AppColors.textMain,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  // Logic to open date range picker
+                  showDateRangePicker(
                     context: context,
-                    initialDate: _selectedFilterDate ?? DateTime.now(),
-                    firstDate: DateTime(2020),
+                    firstDate: DateTime(2023),
                     lastDate: DateTime.now(),
                     builder: (context, child) {
                       return Theme(
@@ -163,86 +173,20 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                             surface: AppColors.surface,
                             onSurface: AppColors.textMain,
                           ),
-                          dialogTheme: const DialogThemeData(
-                            backgroundColor: AppColors.surface,
-                          ),
                         ),
                         child: child!,
                       );
                     },
                   );
-                  if (picked != null) {
-                    setState(() {
-                      _selectedFilterDate = picked;
-                    });
-                  }
                 },
                 icon: const Icon(
-                  LucideIcons.calendar,
+                  LucideIcons.chevronDown,
+                  size: 16,
                   color: AppColors.textSecondary,
-                  size: 18,
-                ),
-                label: Text(
-                  _selectedFilterDate != null
-                      ? DateFormat('dd.MM.yyyy').format(_selectedFilterDate!)
-                      : 'Tarih Seçiniz',
-                  style: const TextStyle(color: AppColors.textMain),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            // Filter Button - Always visible
-            ElevatedButton.icon(
-              onPressed: _selectedFilterDate != null
-                  ? () {
-                      // Trigger data filter
-                      // In real implementation: ref.read(scrapAnalysisProvider.notifier).filterByDate(_selectedFilterDate!);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Tarih filtresi: ${DateFormat('dd.MM.yyyy').format(_selectedFilterDate!)}',
-                          ),
-                          backgroundColor: AppColors.success,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  : null,
-              icon: const Icon(LucideIcons.search, size: 18),
-              label: const Text('Filtrele'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.surface,
-                disabledForegroundColor: AppColors.textSecondary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-
-            ElevatedButton.icon(
-              onPressed: _pickExcelFile,
-              icon: const Icon(LucideIcons.upload, size: 18),
-              label: const Text('Yeni Analiz Yükle'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -266,11 +210,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Analiz sonucunu görüntülemek için Excel dosyası yükleyiniz.',
+            'Analiz sonucunu görüntülemek için \'Üretim Verisi Girişi\' sekmesinden veri yükleyiniz.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-
           // Date Picker in Empty State
           Container(
             decoration: BoxDecoration(
@@ -321,233 +265,74 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildOverviewTab(ScrapDashboardData data) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          // 1. KPI Cards (Row of 3)
+          Row(
+            children: [
+              Expanded(
+                child: _buildKpiCard(
+                  'FRENBU',
+                  data.summary.frenbuRate,
+                  data.summary.frenbuScrapDto,
+                  data.summary.frenbuTurned,
+                  AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildKpiCard(
+                  'D2 FABRİKA',
+                  data.summary.d2Rate,
+                  data.summary.d2ScrapDto,
+                  data.summary.d2Turned,
+                  Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildKpiCard(
+                  'D3 FABRİKA',
+                  data.summary.d3Rate,
+                  data.summary.d3ScrapDto,
+                  data.summary.d3Turned,
+                  AppColors.reworkOrange,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _pickExcelFile,
-            icon: const Icon(LucideIcons.upload),
-            label: const Text('Excel Yükle'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            ),
+
+          // 2. Charts Section
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Donut Chart
+              Expanded(flex: 4, child: _buildChartSection(data)),
+              const SizedBox(width: 24),
+              // Distribution Table (Frenbu Top Defects) in Overview?
+              // Or maybe just general stats?
+              // The user asked for "sağında ise özet istatistikler".
+              Expanded(
+                flex: 3,
+                child: _buildDistributionTable(data.frenbuDefectDistribution),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDashboard(ScrapDashboardData data) {
-    return Column(
-      children: [
-        // 1. Summary Cards (Vertical) & Pie Chart
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Vertical Summary Cards
-              Expanded(
-                flex: 2,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildSummaryCard(
-                      'D2 FABRİKA',
-                      data.summary.d2Rate,
-                      data.summary.d2ScrapDto,
-                      data.summary.d2Turned,
-                      Colors.blue,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSummaryCard(
-                      'D3 FABRİKA',
-                      data.summary.d3Rate,
-                      data.summary.d3ScrapDto,
-                      data.summary.d3Turned,
-                      Colors.orange,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSummaryCard(
-                      'FRENBU',
-                      data.summary.frenbuRate,
-                      data.summary.frenbuScrapDto,
-                      _manualProductionQty ?? data.summary.frenbuTurned,
-                      AppColors.primary,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              // Pie Chart
-              Expanded(flex: 3, child: _buildChartSection(data)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Production Input Section
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.5),
-              width: 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                LucideIcons.packagePlus,
-                color: AppColors.primary,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Üretim Adeti Girişi:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: AppColors.textMain,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
-                  controller: _productionController,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(color: AppColors.textMain),
-                  decoration: InputDecoration(
-                    hintText: 'Üretim adetini giriniz',
-                    hintStyle: TextStyle(
-                      color: AppColors.textSecondary.withValues(alpha: 0.5),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.background,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.border,
-                        width: 1.5,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.border,
-                        width: 1.5,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.primary,
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  final value = int.tryParse(_productionController.text);
-                  if (value != null && value > 0) {
-                    setState(() {
-                      _manualProductionQty = value;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Üretim adeti kaydedildi: $value'),
-                        backgroundColor: AppColors.success,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(LucideIcons.check, size: 18),
-                label: const Text('Kaydet'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // 2. Frenbu Distribution & Frenbu Table (Side by Side)
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Frenbu Distribution
-            Expanded(
-              child: _buildDistributionTable(data.frenbuDefectDistribution),
-            ),
-            const SizedBox(width: 24),
-            // Frenbu Table
-            Expanded(
-              child: _buildScrapTable(
-                'FRENBU FİRE TABLOSU',
-                data.frenbuTable,
-                AppColors.primary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
-        // 3. D2 & D3 Tables in Single Row: D2 Fire, D2 Clean, D3 Clean, D3 Fire
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _buildScrapTable('D2 DIŞ FİRE', data.d2Table, Colors.blue),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildCleanTable(
-                'D2 FİRESİZ ÜRÜNLER',
-                data.d2CleanProducts,
-                Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildCleanTable(
-                'D3 FİRESİZ ÜRÜNLER',
-                data.d3CleanProducts,
-                Colors.orange,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildScrapTable(
-                'D3 DIŞ FİRE',
-                data.d3Table,
-                Colors.orange,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  Widget _buildSummaryCard(
+  Widget _buildKpiCard(
     String title,
     double rate,
     int scrapQty,
@@ -555,14 +340,14 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 2),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -570,77 +355,79 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Row 1: Title and Rate (Top)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textMain,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              Expanded(
                 child: Text(
-                  '${rate.toStringAsFixed(2)}%',
-                  style: TextStyle(
-                    color: Colors.white,
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),
+              if (rate > 0)
+                Text(
+                  '${rate.toStringAsFixed(1)}%',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
+          // Row 2: Quantities (aligned)
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              // Fire Adeti (Left)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Fire Adeti',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   Text(
                     '$scrapQty',
                     style: const TextStyle(
+                      fontSize: 32, // Bigger
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: AppColors.textMain,
+                      color: AppColors.textMain, // White
+                    ),
+                  ),
+                  const Text(
+                    'Fire Adeti',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
+              // Üretim Adeti (Right)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text(
-                    'Üretim',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   Text(
                     '$totalQty',
                     style: const TextStyle(
+                      fontSize: 20, // Slightly smaller than Fire
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: AppColors.textMain,
+                      color: AppColors.textMain, // White
+                    ),
+                  ),
+                  const Text(
+                    'Üretim Adeti',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -653,25 +440,33 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   }
 
   Widget _buildChartSection(ScrapDashboardData data) {
-    final sections = data.dailyScrapRates.map((item) {
+    // Chart 1: Daily Scrap Rates (Existing)
+    final scrapRateSections = data.dailyScrapRates.map((item) {
       final color = item.factory == 'D2'
           ? Colors.blue
-          : (item.factory == 'D3' ? Colors.orange : AppColors.primary);
+          : (item.factory == 'D3' ? AppColors.reworkOrange : AppColors.primary);
       return PieChartSectionData(
         color: color,
         value: item.rate,
         title: '${item.rate.toStringAsFixed(1)}%',
-        radius: 60,
+        radius: 40,
         titleStyle: const TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
       );
     }).toList();
 
+    // Chart 2: Hole Production Quantities (New)
+    // Calculate total hole production for percentage
+    final totalHoles =
+        (data.holeProductionStats['D2'] ?? 0) +
+        (data.holeProductionStats['D3'] ?? 0) +
+        (data.holeProductionStats['FRENBU'] ?? 0);
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -680,191 +475,96 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Günlük Fire Oramları Dağılımı',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 220,
-            child: PieChart(
-              PieChartData(
-                sections: sections,
-                centerSpaceRadius: 40,
-                sectionsSpace: 2,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: data.dailyScrapRates.map((e) {
-              final color = e.factory == 'D2'
-                  ? Colors.blue
-                  : (e.factory == 'D3' ? Colors.orange : AppColors.primary);
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  children: [
-                    Container(width: 12, height: 12, color: color),
-                    const SizedBox(width: 4),
-                    Text(e.factory, style: const TextStyle(fontSize: 12)),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScrapTable(
-    String title,
-    List<ScrapTableItem> items,
-    Color headerColor,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: headerColor.withValues(alpha: 0.5), width: 2),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              color: headerColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(15),
-              ),
-            ),
-            width: double.infinity,
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          Table(
-            border: TableBorder.all(color: AppColors.border, width: 1.5),
-            columnWidths: const {
-              0: FlexColumnWidth(1.5), // Tür - wider
-              1: FlexColumnWidth(1.5), // Kod
-              2: FlexColumnWidth(1), // Üretim
-              3: FlexColumnWidth(1), // Fire
-              4: FlexColumnWidth(1.2), // Oran
-            },
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const TableRow(
-                decoration: BoxDecoration(color: AppColors.surfaceLight),
-                children: [
-                  _HeaderCell('Ürün Türü'),
-                  _HeaderCell('Ürün Kodu'),
-                  _HeaderCell('Üretim'),
-                  _HeaderCell('Fire'),
-                  _HeaderCell('Oran'),
-                ],
-              ),
-              ...items.map(
-                (item) => TableRow(
+              // 1. Scrap Rates Chart
+              Expanded(
+                child: Column(
                   children: [
-                    _DataCell(item.productType),
-                    _DataCell(item.productCode, isBold: true),
-                    _DataCell('${item.productionQty}'),
-                    _DataCell('${item.scrapQty}'),
-                    _DataCell(
-                      '${item.scrapRate.toStringAsFixed(1)}%',
-                      // Always white, no auto-red
+                    const Text(
+                      'Fire Oranları',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 140, // Reduced from 220
+                      child: PieChart(
+                        PieChartData(
+                          sections: scrapRateSections,
+                          centerSpaceRadius: 25,
+                          sectionsSpace: 2,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                'Kayıt bulunamadı.',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // NEW: Clean Products Table
-  Widget _buildCleanTable(
-    String title,
-    List<ProductionEntry> items,
-    Color headerColor,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 2),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              color: headerColor.withValues(alpha: 0.2), // Lighter header
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(15),
-              ),
-            ),
-            width: double.infinity,
-            child: Text(
-              title,
-              style: TextStyle(
-                color: headerColor, // Colored text
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          Table(
-            border: TableBorder.all(color: AppColors.border, width: 1.5),
-            columnWidths: const {
-              0: FlexColumnWidth(1.5), // Kod - wider
-              1: FlexColumnWidth(1), // Üretim
-            },
-            children: [
-              const TableRow(
-                decoration: BoxDecoration(color: AppColors.surfaceLight),
-                children: [
-                  _HeaderCell('Ürün Kodu'),
-                  _HeaderCell('Üretim Adeti'),
-                ],
-              ),
-              ...items.map(
-                (item) => TableRow(
+              // 2. Hole Production Text (Replaced Chart)
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _DataCell(item.productCode, isBold: true),
-                    _DataCell('${item.quantity}'),
+                    const Text(
+                      'Üretim Adeti',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16, // Slightly larger title
+                        color: AppColors.textMain,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      totalHoles > 0 ? '$totalHoles' : '-',
+                      style: const TextStyle(
+                        fontSize: 36, // Large, prominent number
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textMain,
+                      ),
+                    ),
+                    if (totalHoles > 0) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Adet',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-          if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                'Kayıt bulunamadı.',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ),
+          const SizedBox(height: 16),
+          // Legend (Shared) - Only for Scrap Rates now effectively, but keeps consistent look
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildLegendItem('FRENBU', AppColors.primary),
+              _buildLegendItem('D2', Colors.blue),
+              _buildLegendItem('D3', AppColors.reworkOrange),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        children: [
+          Container(width: 12, height: 12, color: color),
+          const SizedBox(width: 4),
+          Text(text, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );
@@ -948,6 +648,487 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       ),
     );
   }
+
+  Widget _buildDetailTab(
+    String title,
+    List<ScrapTableItem> scrapItems,
+    List<ProductionEntry> cleanItems,
+    Color color, {
+    List<ShiftData>? shifts,
+  }) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textMain,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Shift Stats (Only for Frenbu)
+          if (shifts != null && shifts.isNotEmpty) ...[
+            _buildShiftStatsRow(shifts),
+            const SizedBox(height: 24),
+          ],
+
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'FİRE LİSTESİ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSimpleScrapTable(scrapItems, color),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'FİRESİZ ÜRÜNLER',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSimpleCleanTable(cleanItems, color),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleScrapTable(List<ScrapTableItem> items, Color accentColor) {
+    if (items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Text(
+          'Kayıt bulunamadı.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+      );
+    }
+    return Table(
+      border: TableBorder(
+        horizontalInside: BorderSide(
+          color: Colors.white.withValues(
+            alpha: 0.1,
+          ), // More visible white separator
+          width: 1,
+        ),
+        verticalInside: BorderSide(
+          color: Colors.white.withValues(alpha: 0.05),
+          width: 1,
+        ),
+      ),
+      columnWidths: const {
+        0: FlexColumnWidth(1.2), // Kod
+        1: FlexColumnWidth(1), // Üretim
+        2: FlexColumnWidth(0.8), // Fire
+        3: FlexColumnWidth(1), // Oran
+      },
+      children: [
+        TableRow(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+          ),
+          children: const [
+            _HeaderCell('Kod', align: TextAlign.right),
+            _HeaderCell('Üretim Adeti'),
+            _HeaderCell('Fire'),
+            _HeaderCell('Oran'),
+          ],
+        ),
+        ...items.map(
+          (item) => TableRow(
+            children: [
+              // Product Code - Clickable
+              TableRowInkWell(
+                onTap: () => _showScrapDetailDialog(context, item),
+                child: _DataCell(
+                  item.productCode,
+                  isBold: true,
+                  align: TextAlign.right,
+                ),
+              ),
+              _DataCell('${item.productionQty}'),
+              _DataCell('${item.scrapQty}'),
+              _DataCell('${item.scrapRate.toStringAsFixed(1)}%'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSimpleCleanTable(
+    List<ProductionEntry> items,
+    Color accentColor,
+  ) {
+    if (items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Text(
+          'Kayıt bulunamadı.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+      );
+    }
+    return Table(
+      border: TableBorder(
+        horizontalInside: BorderSide(
+          color: Colors.white.withValues(
+            alpha: 0.1,
+          ), // More visible white separator
+          width: 1,
+        ),
+        verticalInside: BorderSide(
+          color: Colors.white.withValues(alpha: 0.05),
+          width: 1,
+        ),
+      ),
+      columnWidths: const {
+        0: FlexColumnWidth(0.8), // Kod - Narrower to reduce gap
+        1: FlexColumnWidth(1), // Üretim
+      },
+      children: [
+        TableRow(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+          ),
+          children: const [
+            _HeaderCell('Kod', align: TextAlign.right),
+            _HeaderCell('Üretim Adeti'),
+          ],
+        ),
+        ...items.map(
+          (item) => TableRow(
+            children: [
+              _DataCell(item.productCode, isBold: true, align: TextAlign.right),
+              _DataCell('${item.quantity}'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showScrapDetailDialog(BuildContext context, ScrapTableItem item) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.border),
+          ),
+          child: Container(
+            width: 500,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'HATA DETAYLARI - ${item.productCode}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textMain,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.textSecondary,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (item.details.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        'Detay bulunamadı.',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  )
+                else
+                  SizedBox(
+                    height: 400,
+                    child: ListView.separated(
+                      itemCount: item.details.length,
+                      separatorBuilder: (context, index) =>
+                          const Divider(color: AppColors.border, height: 32),
+                      itemBuilder: (context, index) {
+                        final detail = item.details[index];
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 1. Image (Mock)
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.border.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.image_not_supported,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // 2. Details
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        detail.defectName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: AppColors.reworkOrange,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.background,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          border: Border.all(
+                                            color: AppColors.border,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '${detail.quantity} Adet',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                            color: AppColors.textMain,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Şarj No: ${detail.batchNo}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    detail.description ?? 'Açıklama yok.',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textMain,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShiftStatsRow(List<ShiftData> shifts) {
+    return Row(
+      children: shifts.map((shift) {
+        return Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  shift.shiftName,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${shift.scrapQty} Adet',
+                      style: const TextStyle(
+                        color: AppColors.textMain,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '%${shift.rate.toStringAsFixed(1)}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _DataCell extends StatelessWidget {
+  final String text;
+  final bool isBold;
+  final TextAlign align;
+  const _DataCell(
+    this.text, {
+    this.isBold = false,
+    this.align = TextAlign.center,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 8,
+        horizontal: 8,
+      ), // Reduced vertical padding
+      child: Text(
+        text,
+        textAlign: align,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          color: AppColors.textMain,
+        ),
+      ),
+    );
+  }
 }
 
 class _HeaderCell extends StatelessWidget {
@@ -967,28 +1148,6 @@ class _HeaderCell extends StatelessWidget {
           fontWeight: FontWeight.bold,
           fontSize: fontSize ?? 13,
           color: AppColors.textSecondary,
-        ),
-      ),
-    );
-  }
-}
-
-class _DataCell extends StatelessWidget {
-  final String text;
-  final bool isBold;
-  const _DataCell(this.text, {this.isBold = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-          color: AppColors.textMain,
         ),
       ),
     );

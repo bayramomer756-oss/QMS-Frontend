@@ -420,7 +420,7 @@ class _EditReworkDialogState extends State<EditReworkDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Lütfen tüm zorunlu alanları doldurun'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.reworkOrange,
         ),
       );
       return;

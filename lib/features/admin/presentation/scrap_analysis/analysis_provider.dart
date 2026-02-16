@@ -55,19 +55,56 @@ class ScrapAnalysisNotifier extends Notifier<ScrapAnalysisState> {
           // 1: Product Code
           // 2: Factory (D2, D3)
           // 3: Quantity
+          // 4: Hole Quantity (Optional)
 
-          final productCode = row[1]?.value?.toString().trim() ?? '';
-          final factory = row[2]?.value?.toString().trim().toUpperCase() ?? '';
+          DateTime? date;
+          try {
+            final dateCell = row[0];
+            final dVal = _extractCellValue(dateCell?.value);
+
+            if (dVal is DateTime) {
+              date = dVal;
+            } else if (dVal is String) {
+              // Try string format dd.MM.yyyy
+              final dateStr = dVal.trim();
+              final parts = dateStr.split('.');
+              if (parts.length == 3) {
+                date = DateTime(
+                  int.parse(parts[2]),
+                  int.parse(parts[1]),
+                  int.parse(parts[0]),
+                );
+              }
+            }
+          } catch (_) {}
+
+          final productCode =
+              _extractCellValue(row[1]?.value)?.toString().trim() ?? '';
+          final factory =
+              _extractCellValue(
+                row[2]?.value,
+              )?.toString().trim().toUpperCase() ??
+              '';
+
           final quantityCell = row[3];
 
+          // Safer Column E Access
+          dynamic holeQtyCell;
+          if (row.length > 4) {
+            holeQtyCell = row[4];
+          }
+
           int quantity = _parseQuantity(quantityCell);
+          int holeQty = _parseQuantity(holeQtyCell);
 
           if (productCode.isNotEmpty) {
             productionItems.add(
               ScrapUploadItem(
+                date: date,
                 productCode: productCode,
                 factory: factory,
                 quantity: quantity,
+                holeQty: holeQty,
               ),
             );
           }
@@ -91,15 +128,31 @@ class ScrapAnalysisNotifier extends Notifier<ScrapAnalysisState> {
     }
   }
 
+  dynamic _extractCellValue(dynamic val) {
+    if (val == null) return null;
+    if (val is IntCellValue) return val.value;
+    if (val is DoubleCellValue) return val.value;
+    if (val is TextCellValue) return val.value;
+    if (val is DateCellValue) return val.asDateTimeLocal;
+    return val;
+  }
+
   int _parseQuantity(dynamic cell) {
-    if (cell == null || cell.value == null) return 0;
-    final val = cell.value;
+    if (cell == null) return 0;
+    // Handle Data object if passed directly
+    var val = cell is Data ? cell.value : cell;
+    val = _extractCellValue(val);
 
-    dynamic dVal = val;
-    if (dVal is int) return dVal;
-    if (dVal is double) return dVal.toInt();
+    if (val == null) return 0;
 
-    return int.tryParse(dVal.toString()) ?? 0;
+    if (val is int) return val;
+    if (val is double) return val.toInt();
+
+    // Robust String Parsing
+    final strVal = val.toString().trim().replaceAll(' ', '');
+    if (strVal.isEmpty) return 0;
+
+    return int.tryParse(strVal) ?? 0;
   }
 
   ScrapDashboardData _generateDashboardData(
@@ -136,6 +189,7 @@ class ScrapAnalysisNotifier extends Notifier<ScrapAnalysisState> {
 
     // 2. Aggregate Data
     final frenbuTable = <ScrapTableItem>[];
+    final frenbuClean = <ProductionEntry>[]; // NEW
     final d2Table = <ScrapTableItem>[];
     final d3Table = <ScrapTableItem>[];
     final d2Clean = <ProductionEntry>[];
@@ -147,7 +201,13 @@ class ScrapAnalysisNotifier extends Notifier<ScrapAnalysisState> {
     int totalFrenbuScrap = 0;
 
     int totalD2Turned = 0;
+
     int totalD3Turned = 0;
+
+    // Hole Production Stats - ADDED
+    int totalD2Hole = 0;
+    int totalD3Hole = 0;
+    int totalFrenbuHole = 0;
 
     // Filter scraps by selected date (Mocking logic: if date is selected, we might want to vary data)
     // For now, we use static mock data but in real scenario, we would query DB with this date.
@@ -157,6 +217,19 @@ class ScrapAnalysisNotifier extends Notifier<ScrapAnalysisState> {
     // final selectedScraps = await repository.getScrapsByDate(date);
 
     for (var item in productionItems) {
+      // Accumulate Hole Qty - ADDED
+      // Accumulate Hole Qty - CORRECTED LOGIC
+      if (item.holeQty > 0) {
+        if (item.factory == 'D2') {
+          totalD2Hole += item.holeQty;
+        } else if (item.factory == 'D3') {
+          totalD3Hole += item.holeQty;
+        } else {
+          // If not D2 or D3, assume Frenbu/Other
+          totalFrenbuHole += item.holeQty;
+        }
+      }
+
       // Find scraps for this product
       final productScraps = selectedScraps
           .where((s) => s['product'] == item.productCode)
@@ -182,30 +255,64 @@ class ScrapAnalysisNotifier extends Notifier<ScrapAnalysisState> {
       String type = _getProductType(item.productCode);
 
       // FRENBU TABLE (TI Scraps)
-      if (tiScrapQty > 0 || item.quantity > 0) {
-        // Only add if there is production or scrap?
-        if (item.quantity > 0) {
+      // Only process if it feels like a Frenbu part (implied by context or if it has TI scraps)
+      // Or if we decide all parts go through Frenbu check?
+      // Current logic: If it has TI scraps OR it is NOT D2/D3 specific?
+      // Actually the Excel has 'Factory' column.
+      // If Factory is D2, it contributes to D2. If D3, to D3.
+      // But typically ALL parts might be processed in Frenbu too?
+      // Let's assume ANY part can be in Frenbu list if it has production there.
+      // For now, let's assume items with factory 'D2' or 'D3' are foundry items.
+      // What about Frenbu items? Usually they don't have 'D2'/'D3' factory in typical uploads if separate?
+      // OR, does the user want ALL items to be checked for Frenbu scraps?
+      // Based on previous code:
+      // if (tiScrapQty > 0 || item.quantity > 0) -> added to frenbuTable if prod > 0.
+
+      // Let's refine:
+      if (item.quantity > 0) {
+        totalFrenbuProd += item.quantity;
+        if (tiScrapQty > 0) {
+          final details = <ScrapDetail>[];
+          for (var s in productScraps) {
+            final defectCode = s['defect'] as String;
+            final qty = s['qty'] as int;
+            // Mocking details
+            details.add(
+              ScrapDetail(
+                defectName: defectCode,
+                quantity: qty,
+                batchNo: 'SARJ-${DateTime.now().millisecond}', // Mock Batch
+                description:
+                    'Otomatik ölçüm sonrası tespit edilen $defectCode hatası.',
+                imageUrl: 'https://via.placeholder.com/150', // Mock Image
+              ),
+            );
+          }
+
           frenbuTable.add(
             ScrapTableItem(
               productType: type,
               productCode: item.productCode,
               productionQty: item.quantity,
               scrapQty: tiScrapQty,
-              scrapRate: item.quantity > 0
-                  ? (tiScrapQty / item.quantity) * 100
-                  : 0,
+              scrapRate: (tiScrapQty / item.quantity) * 100,
+              details: details,
             ),
           );
-          totalFrenbuProd += item.quantity;
           totalFrenbuScrap += tiScrapQty;
+        } else {
+          // No TI scraps -> Clean for Frenbu
+          frenbuClean.add(
+            ProductionEntry(
+              productCode: item.productCode,
+              factoryType: 'FRENBU',
+              quantity: item.quantity,
+            ),
+          );
         }
       }
 
       // FOUNDRY TABLES (D Scraps)
-      // Logic: If factory is D2 -> D2 Table, if D3 -> D3 Table.
-      // But user dashboard shows "D2 DIŞ FİRE" and "D3 DIŞ FİRE".
-      // And the uploaded excel has a "Factory" column.
-
       if (item.factory == 'D2') {
         totalD2Turned += item.quantity;
         if (dScrapQty > 0) {
@@ -262,6 +369,25 @@ class ScrapAnalysisNotifier extends Notifier<ScrapAnalysisState> {
     d2Table.sort((a, b) => b.scrapRate.compareTo(a.scrapRate));
     d3Table.sort((a, b) => b.scrapRate.compareTo(a.scrapRate));
 
+    // Mock Shifts for Frenbu
+    final mockFrenbuShifts = [
+      ShiftData(
+        shiftName: '00:00 - 08:00',
+        scrapQty: (totalFrenbuScrap * 0.4).toInt(),
+        rate: 2.1,
+      ),
+      ShiftData(
+        shiftName: '08:00 - 16:00',
+        scrapQty: (totalFrenbuScrap * 0.35).toInt(),
+        rate: 1.8,
+      ),
+      ShiftData(
+        shiftName: '16:00 - 00:00',
+        scrapQty: (totalFrenbuScrap * 0.25).toInt(),
+        rate: 1.2,
+      ),
+    ];
+
     return ScrapDashboardData(
       date: DateTime.now(), // Should rely on Excel date column if available
       totalFrenbuProduction: totalFrenbuProd,
@@ -292,8 +418,16 @@ class ScrapAnalysisNotifier extends Notifier<ScrapAnalysisState> {
           totalFrenbuProd > 0 ? (totalFrenbuScrap / totalFrenbuProd) * 100 : 0,
         ),
       ],
+      holeProductionStats: {
+        // ADDED
+        'D2': totalD2Hole,
+        'D3': totalD3Hole,
+        'FRENBU': totalFrenbuHole,
+      },
       frenbuTable: frenbuTable,
       frenbuDefectDistribution: _generateMockDistribution(), // Mock for now
+      frenbuCleanProducts: frenbuClean, // NEW
+      frenbuShifts: mockFrenbuShifts, // ADDED
       d2Table: d2Table,
       d3Table: d3Table,
       d2CleanProducts: d2Clean,

@@ -523,7 +523,6 @@ class _QualityApprovalFormScreenState
 
   Widget _buildStatusRadio(String value, Color color) {
     final isSelected = _complianceStatus == value;
-    final isRejected = value == 'RET' && isSelected;
 
     return InkWell(
       onTap: () {
@@ -538,9 +537,7 @@ class _QualityApprovalFormScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? color.withValues(alpha: 0.12)
-              : AppColors.surfaceLight,
+          color: isSelected ? color : AppColors.surfaceLight,
           border: Border.all(
             color: isSelected ? color : AppColors.border,
             width: isSelected ? 2 : 1,
@@ -552,18 +549,14 @@ class _QualityApprovalFormScreenState
           children: [
             Icon(
               isSelected ? LucideIcons.checkCircle2 : LucideIcons.circle,
-              color: isRejected
-                  ? Colors.white
-                  : (isSelected ? color : AppColors.textSecondary),
+              color: isSelected ? Colors.white : AppColors.textSecondary,
               size: 20,
             ),
             const SizedBox(width: 8),
             Text(
               value,
               style: TextStyle(
-                color: isRejected
-                    ? Colors.white
-                    : (isSelected ? color : AppColors.textSecondary),
+                color: isSelected ? Colors.white : AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
               ),

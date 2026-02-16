@@ -63,7 +63,7 @@ class AboutScreen extends StatelessWidget {
                   _buildPersonCard('Mehmet AKTAŞ', 'Bilgi İşlem Yöneticisi'),
                   const SizedBox(height: 16),
                   _buildPersonCard(
-                    'Ömer Osman Bayram',
+                    'Ömer Osman BAYRAM',
                     'Kalite Kontrol Yöneticisi',
                   ),
                   const SizedBox(height: 16),

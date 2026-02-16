@@ -39,7 +39,7 @@ class ScrapSummaryCards extends StatelessWidget {
             'Genel Fire Oranı',
             '%${avgRate.toStringAsFixed(2)}',
             LucideIcons.percent,
-            Colors.orange,
+            AppColors.reworkOrange,
           ),
         ),
       ],

@@ -13,7 +13,6 @@ import '../../auth/presentation/login_screen.dart';
 import '../../chat/presentation/shift_notes_screen.dart';
 import '../logic/cubits/production_counter_cubit.dart';
 import '../logic/cubits/production_counter_state.dart';
-import '../../../core/widgets/forms/batch_number_picker.dart';
 
 class FinalKontrolScreen extends StatefulWidget {
   final DateTime? initialDate;
@@ -30,9 +29,6 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
   final _customerNameController = TextEditingController();
   final _paletNoController = TextEditingController();
   final _aciklamaController = TextEditingController();
-
-  // Batch Number Picker Key for reset
-  Key _batchNumberPickerKey = UniqueKey();
 
   // Ürün Bilgileri (sistemden otomatik gelecek)
   String _productName = '';
@@ -298,14 +294,14 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
                                               const SizedBox(width: 16),
 
                                               Expanded(
-                                                child: BatchNumberPicker(
-                                                  key: _batchNumberPickerKey,
+                                                child: _buildInputField(
                                                   label:
                                                       'Palet İzlenebilirlik No',
-                                                  onBatchNoChanged: (value) {
-                                                    _paletNoController.text =
-                                                        value;
-                                                  },
+                                                  controller:
+                                                      _paletNoController,
+                                                  icon: LucideIcons.scanLine,
+                                                  keyboardType:
+                                                      TextInputType.text,
                                                 ),
                                               ),
                                             ],
@@ -748,9 +744,6 @@ class _FinalKontrolScreenState extends State<FinalKontrolScreen> {
                                                   _aciklamaController.clear();
                                                   _productName = '';
                                                   _productType = '';
-                                                  // Reset BatchNumberPicker
-                                                  _batchNumberPickerKey =
-                                                      UniqueKey();
                                                 });
                                                 ScaffoldMessenger.of(
                                                   context,
