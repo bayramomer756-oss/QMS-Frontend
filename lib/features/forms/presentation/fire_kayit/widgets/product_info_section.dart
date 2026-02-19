@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../../core/widgets/forms/custom_text_field.dart';
+import '../../../../../core/widgets/forms/product_info_card.dart';
 import '../../../../../core/widgets/forms/stepper_field.dart';
 
 /// Product information section for Fire Kayit form
@@ -27,48 +27,32 @@ class ProductInfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // First Row: Ürün Kodu, Adet
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: CustomTextField(
-                label: 'Ürün Kodu',
-                controller: productCodeController,
-                icon: Icons.inventory_2_outlined,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(7),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            StepperField(
-              label: 'Adet',
-              controller: quantityController,
-              width: 140,
-              onDecrement: onQuantityDecrement,
-              onIncrement: onQuantityIncrement,
-            ),
-          ],
+        // Product Info Card (Code, Name, Type) with Autocomplete
+        ProductInfoCard(
+          productCodeController: productCodeController,
+          productName: productNameController.text,
+          productType: productTypeController.text,
+          onProductCodeChanged: (value) {
+            // Optional: clear other fields if code is cleared
+            if (value.isEmpty) {
+              productNameController.clear();
+              productTypeController.clear();
+            }
+          },
+          onProductSelected: (product) {
+            productNameController.text = product.urunAdi;
+            productTypeController.text = product.urunTuru;
+          },
         ),
         const SizedBox(height: 12),
 
-        // Second Row: Ürün Adı
-        CustomTextField(
-          label: 'Ürün Adı',
-          controller: productNameController,
-          icon: Icons.label_outline,
-          enabled: false,
-        ),
-        const SizedBox(height: 12),
-
-        // Third Row: Ürün Türü
-        CustomTextField(
-          label: 'Ürün Türü',
-          controller: productTypeController,
-          icon: Icons.layers_outlined,
-          enabled: false,
+        // Quantity Field
+        StepperField(
+          label: 'Adet',
+          controller: quantityController,
+          width: double.infinity,
+          onDecrement: onQuantityDecrement,
+          onIncrement: onQuantityIncrement,
         ),
       ],
     );

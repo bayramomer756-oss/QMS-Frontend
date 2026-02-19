@@ -39,7 +39,7 @@ class ProductSearch extends _$ProductSearch {
   }
 
   Future<void> searchProducts(String query) async {
-    if (query.trim().length < 2) {
+    if (query.trim().isEmpty) {
       state = const AsyncValue.data([]);
       return;
     }
